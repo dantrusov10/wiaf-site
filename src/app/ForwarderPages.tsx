@@ -1,0 +1,512 @@
+﻿import { useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { excludedNotes, includedChecks } from '../content/included'
+import { forwarderWeek } from '../demo/seed'
+import { formatWhen, loadLabel, modeLabel, ruDec, ruInt } from '../data'
+import { useNow } from '../hooks'
+import { BidBox } from './BidBox'
+import { Bars, Stat } from './charts'
+import {
+  bestBid,
+  commissionRub,
+  countryKey,
+  isOpenLot,
+  loadFromContainer,
+  lotStatus,
+  modeEnum,
+  slotLabel,
+  statusRu,
+  uniqueBidders,
+  winnerId,
+  type AppLot,
+} from './engine'
+import { MessageForm } from './MessageForm'
+import { useSession } from './session'
+import { EmptyState, Panel } from './ui'
+
+type DealRow = {
+  id: string
+  code: string
+  from: string
+  to: string
+  myBid: number
+  winBid: number
+  bidders: number
+  status: 'won' | 'lost' | 'archive'
+}
+
+function dealsOf(userId: string, lots: AppLot[], now: number): DealRow[] {
+  const out: DealRow[] = []
+  for (const l of lots) {
+    const mine = l.bids.filter((b) => b.userId === userId)
+    if (!mine.length) continue
+    const st = lotStatus(l, now)
+    if (st === 'scheduled' || st === 'live' || st === 'draft') continue
+    const myBid = Math.min(...mine.map((b) => b.amount))
+    const win = bestBid(l.bids) ?? myBid
+    const winU = winnerId(l.bids)
+    let status: DealRow['status'] = 'archive'
+    if (!l.archived && st === 'held' && winU === userId) status = 'won'
+    else if (!l.archived && st === 'held') status = 'lost'
+    out.push({
+      id: l.id,
+      code: l.code,
+      from: l.from,
+      to: l.to,
+      myBid,
+      winBid: win,
+      bidders: uniqueBidders(l.bids),
+      status,
+    })
+  }
+  return out
+}
+
+function cargoValueWarn(lot: AppLot) {
+  if (lot.cargoValue > 0) return null
+  return (
+    <p className="rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-[13px] text-brand">
+      Стоимость груза 0 — экспедитору нечем оценить риск.
+    </p>
+  )
+}
+
+function LotCard({ lot, now }: { lot: AppLot; now: number }) {
+  const st = lotStatus(lot, now)
+  return (
+    <article className="rounded-xl border border-line bg-white p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="font-mono text-[11px] text-mist">
+            {lot.code} · {statusRu(st)}
+          </p>
+          <h2 className="text-lg font-semibold">
+            {lot.from} → {lot.to}
+          </h2>
+          <p className="mt-1 text-[14px] text-muted">{lot.cargo}</p>
+        </div>
+        <span className="rounded bg-fog px-2 py-0.5 font-mono text-[11px]">{st === 'live' ? 'идёт' : 'очередь'}</span>
+      </div>
+      <p className="mt-2 font-mono text-[12px] text-muted">
+        {ruDec.format(lot.cbm)} м³ · {ruInt.format(lot.kg)} кг · {loadLabel(loadFromContainer(lot.container))} ·{' '}
+        {modeLabel(modeEnum(lot.mode))} · {slotLabel(lot.startIso)}
+      </p>
+      {cargoValueWarn(lot)}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Link to={`/app/forwarder/lots/${lot.id}`} className="rounded-lg border border-line px-3 py-1.5 text-[13px]">
+          Карточка
+        </Link>
+      </div>
+      <div className="mt-3">
+        <BidBox lot={lot} compact />
+      </div>
+    </article>
+  )
+}
+
+export function ForwarderHome() {
+  const { user, lots, resetDemo, setSubscribed } = useSession()
+  const now = useNow(2000)
+  const deals = user ? dealsOf(user.id, lots, now) : []
+  const won = deals.filter((d) => d.status === 'won')
+  const lost = deals.filter((d) => d.status === 'lost')
+  const played = won.length + lost.length
+  const winRate = played ? Math.round((won.length / played) * 100) : 0
+  const commission = won.reduce((s, d) => s + commissionRub(d.winBid), 0)
+  const turnover = won.reduce((s, d) => s + d.myBid, 0)
+  const myBids = lots.reduce((n, l) => n + l.bids.filter((b) => b.userId === user?.id).length, 0)
+  const open = lots.filter((l) => isOpenLot(l, now))
+  const byCountry = {
+    china: open.filter((l) => countryKey(l.country) === 'china').length,
+    turkey: open.filter((l) => countryKey(l.country) === 'turkey').length,
+    vietnam: open.filter((l) => countryKey(l.country) === 'vietnam').length,
+    india: open.filter((l) => countryKey(l.country) === 'india').length,
+  }
+  const balance = user?.balance ?? 0
+  const subscribed = user?.subscribed ?? false
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-5">
+      {balance < 1000 ? (
+        <div className="rounded-xl border border-danger/25 bg-white px-4 py-3">
+          <p className="text-[14px] font-semibold">Счёт меньше 1 000 ₽</p>
+          <p className="mt-1 text-[13px] text-muted">Пока нельзя ставить. Активация — тысяча на счёте; холд под лот = 1% ставки.</p>
+          <Link to="/app/forwarder/balance" className="mt-2 inline-block text-[13px] font-semibold text-brand underline">
+            Пополнить
+          </Link>
+        </div>
+      ) : null}
+
+      <div className="rounded-xl border border-line bg-white p-5 md:p-6">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist">Кабинет исполнителя</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Ставки и маржа</h1>
+        <p className="mt-1 max-w-xl text-[13.5px] text-muted">
+          {user?.company} · сначала all-in, потом лента. Ставка — если хватает на 1% от цифры.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="rounded-lg border border-line px-4 py-2">
+            <p className="font-mono text-[10px] text-mist">Счёт</p>
+            <p className="font-mono text-[18px] font-semibold">
+              {ruInt.format(balance)} ₽{' '}
+              <span className={`text-[12px] ${balance >= 1000 ? 'text-ok' : 'text-danger'}`}>
+                {balance >= 1000 ? 'активен' : 'нужно ≥ 1 000'}
+              </span>
+            </p>
+          </div>
+          <Link to="/app/forwarder/balance" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
+            Пополнить
+          </Link>
+          <Link to="/app/forwarder/china" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold">
+            Лента Китая · {byCountry.china}
+          </Link>
+          <Link to="/help/hold-1" className="rounded-lg px-4 py-2.5 text-[13px] font-medium text-muted hover:text-ink">
+            Почему серая ставка
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <Panel title="Открытые слоты сейчас" action={<Link to="/app/forwarder/china" className="text-[13px] underline">лента</Link>}>
+          {open.length === 0 ? (
+            <EmptyState title="Сейчас пусто" text="Включите почту по ленте и ждите Китай. Турцию не обещаем, если слотов нет." to="/app/forwarder/china" cta="Открыть ленту" />
+          ) : (
+            <ul className="divide-y divide-line text-[13.5px]">
+              {open.slice(0, 5).map((l) => (
+                <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                  <div>
+                    <Link to={`/app/forwarder/lots/${l.id}`} className="font-semibold underline">
+                      {l.from} → {l.to}
+                    </Link>
+                    <p className="text-[12px] text-mist">
+                      {l.cbm} м³ · {l.cargo}
+                    </p>
+                  </div>
+                  <Link to={`/app/forwarder/lots/${l.id}`} className="rounded-lg bg-brand px-3 py-1.5 text-[12px] font-semibold text-white">
+                    К ставке
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+        <Panel
+          title="Почта по ленте"
+          action={
+            <button type="button" className="text-[13px] underline" onClick={() => setSubscribed(!subscribed)}>
+              {subscribed ? 'выкл' : 'вкл'}
+            </button>
+          }
+        >
+          <p className="text-[13.5px] text-muted">
+            Подписка: <span className="font-semibold text-ink">{subscribed ? 'включена' : 'выключена'}</span>. Не мониторить пустую ленту руками.
+          </p>
+          <ul className="mt-3 space-y-1.5 text-[13px]">
+            <li className="flex justify-between">
+              <span>Китай</span>
+              <span className="font-mono">{byCountry.china}</span>
+            </li>
+            <li className="flex justify-between">
+              <span>Турция</span>
+              <span className="font-mono">{byCountry.turkey}</span>
+            </li>
+            <li className="flex justify-between">
+              <span>Вьетнам / Индия</span>
+              <span className="font-mono">
+                {byCountry.vietnam + byCountry.india}
+              </span>
+            </li>
+          </ul>
+        </Panel>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Выиграно / сыграно" value={`${won.length} / ${played}`} hint={`win rate ${winRate}%`} spark={forwarderWeek.map((w) => w.won)} />
+        <Stat label="Комиссия" value={`${ruInt.format(commission)} ₽`} hint="1% без потолка" />
+        <Stat label="Оборот побед" value={`$${ruInt.format(turnover)}`} hint="сумма выигравших ставок" />
+        <Stat label="Ваших ставок" value={String(myBids)} hint="по всем лотам" />
+      </div>
+
+      <Panel title="Ставки и победы по неделям">
+        <Bars a={forwarderWeek.map((w) => w.bids)} b={forwarderWeek.map((w) => w.won)} labels={forwarderWeek.map((w) => w.w)} />
+      </Panel>
+
+      <div className="flex justify-end">
+        <button type="button" onClick={resetDemo} className="text-[12px] text-mist underline">
+          Сбросить демо-кабинет
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function DealTable({ items }: { items: DealRow[] }) {
+  if (!items.length) {
+    return <p className="text-[13.5px] text-muted">Пока нет закрытых слотов с вашей ставкой.</p>
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[680px] text-left text-[13px]">
+        <thead className="border-b border-line font-mono text-[10px] uppercase text-mist">
+          <tr>
+            <th className="py-2 pr-3">Код</th>
+            <th className="py-2 pr-3">Маршрут</th>
+            <th className="py-2 pr-3">Моя $</th>
+            <th className="py-2 pr-3">Победа $</th>
+            <th className="py-2 pr-3">Игроки</th>
+            <th className="py-2">Итог</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((d) => (
+            <tr key={d.id} className="border-b border-line/80 last:border-0">
+              <td className="py-2 pr-3 font-mono">
+                <Link to={`/app/forwarder/lots/${d.id}`} className="underline">
+                  {d.code}
+                </Link>
+              </td>
+              <td className="py-2 pr-3">
+                {d.from} → {d.to}
+              </td>
+              <td className="py-2 pr-3 font-mono">${ruInt.format(d.myBid)}</td>
+              <td className="py-2 pr-3 font-mono">${ruInt.format(d.winBid)}</td>
+              <td className="py-2 pr-3">{d.bidders}</td>
+              <td className="py-2">{d.status === 'won' ? 'выиграли' : d.status === 'lost' ? 'ниже' : 'архив'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function CountryFeed({ name, keyName, note }: { name: string; keyName: string; note: string }) {
+  const { lots } = useSession()
+  const now = useNow(1000)
+  const feed = lots.filter((l) => countryKey(l.country) === keyName && isOpenLot(l, now))
+  return (
+    <div className="mx-auto max-w-5xl space-y-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
+        <p className="mt-1 text-[13.5px] text-muted">{note}</p>
+      </div>
+      {feed.length ? (
+        feed.map((lot) => <LotCard key={lot.id} lot={lot} now={now} />)
+      ) : (
+        <EmptyState
+          title="В этой стране пока пусто"
+          text="Живая лента сейчас — Китай. Пустую Турцию и Индию не обещаем на главной."
+          to="/app/forwarder/china"
+          cta="К ленте Китая"
+        />
+      )}
+    </div>
+  )
+}
+
+export function ForwarderChina() {
+  return <CountryFeed name="Китай · живая лента" keyName="china" note="Открытые слоты. Ставка на карточке и на полном лоте." />
+}
+
+export function ForwarderTurkey() {
+  return <CountryFeed name="Турция" keyName="turkey" note="Открытые слоты по Турции." />
+}
+
+export function ForwarderVietnam() {
+  return <CountryFeed name="Вьетнам" keyName="vietnam" note="Открытые слоты по Вьетнаму." />
+}
+
+export function ForwarderIndia() {
+  return <CountryFeed name="Индия" keyName="india" note="Открытые слоты по Индии." />
+}
+
+export function ForwarderEmptyCountry({ name }: { name: string }) {
+  return <CountryFeed name={name} keyName="other" note="Прочие направления." />
+}
+
+export function ForwarderWon() {
+  const { user, lots } = useSession()
+  const now = useNow(2000)
+  const deals = user ? dealsOf(user.id, lots, now) : []
+  return (
+    <div className="mx-auto max-w-5xl space-y-4">
+      <h1 className="text-2xl font-semibold">Выигранные</h1>
+      <div className="rounded-xl border border-line bg-white p-4">
+        <DealTable items={deals.filter((d) => d.status === 'won')} />
+      </div>
+    </div>
+  )
+}
+
+export function ForwarderLost() {
+  const { user, lots } = useSession()
+  const now = useNow(2000)
+  const deals = user ? dealsOf(user.id, lots, now) : []
+  return (
+    <div className="mx-auto max-w-5xl space-y-4">
+      <h1 className="text-2xl font-semibold">Проигранные</h1>
+      <div className="rounded-xl border border-line bg-white p-4">
+        <DealTable items={deals.filter((d) => d.status === 'lost')} />
+      </div>
+    </div>
+  )
+}
+
+export function ForwarderArchive() {
+  const { user, lots } = useSession()
+  const now = useNow(2000)
+  const deals = user ? dealsOf(user.id, lots, now) : []
+  return (
+    <div className="mx-auto max-w-5xl space-y-4">
+      <h1 className="text-2xl font-semibold">Архив</h1>
+      <div className="rounded-xl border border-line bg-white p-4">
+        <DealTable items={deals.filter((d) => d.status === 'archive')} />
+      </div>
+    </div>
+  )
+}
+
+export function ForwarderBalance() {
+  const { user, ledger, topup } = useSession()
+  const now = useNow(2000)
+  const { lots } = useSession()
+  const [err, setErr] = useState<string | null>(null)
+  const amounts = [1000, 3000, 5000, 10000, 20000]
+  const mine = ledger.filter((t) => t.userId === user?.id)
+  const deals = user ? dealsOf(user.id, lots, now) : []
+  const commission = deals.filter((d) => d.status === 'won').reduce((s, d) => s + commissionRub(d.winBid), 0)
+  const topped = mine.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0)
+  const balance = user?.balance ?? 0
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4">
+      <h1 className="text-2xl font-semibold">Счёт</h1>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat
+          label="Доступно"
+          value={`${ruInt.format(balance)} ₽`}
+          hint={balance >= 1000 ? 'активен · холд = 1% ставки' : 'нужно ≥ 1 000 ₽'}
+        />
+        <Stat label="Пополнено всего" value={`${ruInt.format(topped)} ₽`} />
+        <Stat label="Комиссия списана" value={`${ruInt.format(commission)} ₽`} />
+      </div>
+      <Panel title="Пополнить">
+        <p className="mb-3 text-[13px] text-muted">
+          Минимум 1 000 ₽ за раз. Чтобы ставить на лот, на счёте должно хватать на 1% от вашей ставки (без
+          потолка 5к). Деньги никуда не уходят — только этот браузер.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {amounts.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => {
+                const fail = topup(n)
+                setErr(fail)
+              }}
+              className="rounded-lg border border-line px-4 py-2 text-[13.5px] font-semibold hover:bg-fog"
+            >
+              {ruInt.format(n)} ₽
+            </button>
+          ))}
+        </div>
+        {err ? <p className="mt-2 text-[13px] text-brand">{err}</p> : null}
+      </Panel>
+      <Panel title="Движения">
+        <ul className="text-[13.5px]">
+          {mine.map((t) => (
+            <li key={t.id} className="flex justify-between border-b border-line py-2 last:border-0">
+              <span>
+                {t.at.replace('T', ' ').slice(0, 16)} · {t.note}
+              </span>
+              <span className="font-mono">
+                {t.amount > 0 ? '+' : ''}
+                {ruInt.format(t.amount)} ₽
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Panel>
+    </div>
+  )
+}
+
+export function ForwarderLot() {
+  const { id } = useParams()
+  const { lots } = useSession()
+  const lot = lots.find((l) => l.id === id)
+  if (!lot || lot.isDraft) {
+    return <EmptyState title="Лот не найден" text="Нет такого id в ленте." to="/app/forwarder/china" cta="К ленте" />
+  }
+  return (
+    <div className="mx-auto max-w-2xl space-y-4">
+      <p className="font-mono text-[12px] text-mist">{lot.code}</p>
+      <h1 className="text-2xl font-semibold">
+        {lot.from} → {lot.to}
+      </h1>
+      <p className="text-[15px] text-muted">{lot.cargo}</p>
+      {cargoValueWarn(lot)}
+      <dl className="grid gap-3 rounded-xl border border-line bg-white p-5 text-[14px] sm:grid-cols-2">
+        <div>
+          <dt className="text-mist">Слот</dt>
+          <dd>
+            {formatWhen(lot.startIso)} — {formatWhen(lot.endIso)} МСК
+          </dd>
+        </div>
+        <div>
+          <dt className="text-mist">Тип</dt>
+          <dd>
+            {loadLabel(loadFromContainer(lot.container))} · {modeLabel(modeEnum(lot.mode))}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-mist">Объём / масса</dt>
+          <dd>
+            {ruDec.format(lot.cbm)} м³ · {ruInt.format(lot.kg)} кг
+          </dd>
+        </div>
+        <div>
+          <dt className="text-mist">Инкотермс</dt>
+          <dd>{lot.incoterm}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">Упаковка</dt>
+          <dd>{lot.packing}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">Готовность</dt>
+          <dd>{lot.ready}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">Отправитель</dt>
+          <dd>{lot.shipperName || lot.shipperAddress}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">Назначение</dt>
+          <dd>{lot.destAddress}</dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="text-mist">Комментарий</dt>
+          <dd>{lot.comment}</dd>
+        </div>
+      </dl>
+      <div className="rounded-xl border border-line bg-white p-5">
+        <p className="font-semibold">Что входит в ставку</p>
+        <ul className="mt-2 space-y-1 text-[14px] text-muted">
+          {includedChecks.map((c) => (
+            <li key={c.id}>— {c.label}</li>
+          ))}
+        </ul>
+        <ul className="mt-3 space-y-1 text-[13px] text-mist">
+          {excludedNotes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
+      </div>
+      <BidBox lot={lot} />
+    </div>
+  )
+}
+
+export function ForwarderMessage() {
+  return <MessageForm who="экспедитора" />
+}

@@ -1,0 +1,5 @@
+role,name,phone_or_tg,company_inn,what_ships,cbm,next_date,own_forwarders,score_0_5,wrote_at,lot_published,held_ge2,repeat_inn,notes
+importer,,,,,,,5,нет,нет,нет,нет,балл 5: дата + 15м3 + свои трое
+importer,,,,,,,4,нет,нет,нет,нет,
+forwarder,,,,,,,0,нет,нет,нет,нет,заполнять только тройку к живому лоту
+broker,,,,,,,0,нет,нет,нет,нет,после 3 своих состоявшихся

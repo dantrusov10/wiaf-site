@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+/* Фирменные: чёрный / синий / белый (wiaf.ru). Зелёный и красный — только +/- статусы. */
+@theme {
+  --font-sans: "Golos Text", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Golos Text", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  --color-ink: #0a2f44;
+  --color-navy: #1a2c3e;
+  --color-navy-2: #1f5e7e;
+  --color-brand: #2980b9;
+  --color-brand-2: #3498db;
+  --color-paper: #f8fdfe;
+  --color-fog: #eef2fa;
+  --color-line: #d0e0ea;
+  --color-ok: #2a7f49;
+  --color-danger: #c0392b;
+  --color-warn: #b7791f;
+  --color-muted: #5a6b78;
+  --color-mist: #8a9bab;
+
+  /* Совместимость со старыми классами copper/signal → фирменный синий */
+  --color-copper: #2980b9;
+  --color-copper-2: #3498db;
+  --color-signal: #3498db;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+section[id] {
+  scroll-margin-top: 7rem;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-brand) 35%, transparent);
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-line) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-line) 70%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at 70% 20%, black 20%, transparent 72%);
+}
+
+.hero-spot {
+  background: radial-gradient(520px circle at var(--mx, 70%) var(--my, 30%), color-mix(in srgb, var(--color-brand) 14%, transparent), transparent 55%);
+}
+
+.help-dots {
+  background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.55;
+  mask-image: linear-gradient(#000, transparent);
+}
+
+.pointer-stage {
+  --mx: 70%;
+  --my: 30%;
+}
+
+.auction-row {
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.auction-row:hover {
+  transform: translateX(4px);
+  border-color: var(--color-brand);
+  box-shadow: 4px 0 0 var(--color-brand);
+}
+
+.lift-card,
+.lift-btn {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.lift-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -18px rgba(10, 47, 68, 0.45);
+  border-color: var(--color-brand);
+}
+.lift-btn:hover {
+  transform: translateY(-1px);
+}
+.lift-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+.lift-card:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+.stat-hover {
+  transition: background-color 0.15s ease;
+}
+.stat-hover:hover {
+  background: var(--color-fog);
+}
+
+.device-frame {
+  width: 100%;
+}
+.device-lid {
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 12px 12px 8px 8px;
+  background: #fff;
+}
+.device-chrome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-fog);
+}
+.device-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--color-line);
+}
+.device-screen {
+  background: #fff;
+}
+.device-base {
+  height: 10px;
+  margin: 0 10% 0;
+  border: 1px solid var(--color-line);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  background: var(--color-fog);
+}
+
+.grain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+}
+
+.arc-dash {
+  stroke-dasharray: 6 10;
+  animation: dash 28s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -480;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.7);
+  }
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  background: var(--color-ok);
+  animation: pulse-dot 2.4s ease-out infinite;
+  opacity: 0.45;
+}
+
+.ticker-track {
+  animation: ticker 36s linear infinite;
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.clock {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Кнопки-утилиты под бренд */
+.btn-primary {
+  background: var(--color-brand);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--color-navy-2);
+}
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+.btn-ok {
+  background: var(--color-ok);
+  color: #fff;
+}
