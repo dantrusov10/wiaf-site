@@ -12,6 +12,7 @@ import { ArticleCover, ThemeIcon } from '../components/ThemeIcon'
 import { RatesStrip } from '../components/RatesStrip'
 import { Magnetic } from '../components/Motion'
 import { PageLeadCta } from '../components/LeadMagnet'
+import { ArticleComments } from '../components/ArticleComments'
 
 export function ArticlesPage() {
   const [cat, setCat] = useState<ArticleCategory>('Все')
@@ -163,7 +164,9 @@ export function ArticlePage() {
         <Link to="/articles" className="mt-8 inline-block text-[13px] font-semibold text-brand hover:underline">
           ← Все материалы блога
         </Link>
+        <ArticleComments slug={one.slug} />
       </div>
+      <PageLeadCta variant="article" />
     </main>
   )
 }

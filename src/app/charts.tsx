@@ -1,54 +1,63 @@
+/** Парные столбцы бок о бок — читаемый сравнительный график. */
 export function Bars({
   a,
   b,
   labels,
+  aLabel = 'сформировано',
+  bLabel = 'состоялось',
 }: {
   a: number[]
   b?: number[]
   labels: string[]
+  aLabel?: string
+  bLabel?: string
 }) {
   const max = Math.max(...a, ...(b ?? []), 1)
+  const h = 132
+
   return (
     <div>
-      <div className="flex h-[140px] items-end gap-1.5">
+      <div className="flex items-end gap-2" style={{ height: h }}>
         {a.map((v, i) => {
-          const hA = Math.max(4, Math.round((v / max) * 100))
-          const hB = b ? Math.max(4, Math.round((b[i] / max) * 100)) : 0
+          const ha = Math.round((v / max) * (h - 8))
+          const hb = b ? Math.round((b[i] / max) * (h - 8)) : 0
           return (
-            <div key={labels[i]} className="flex h-full flex-1 flex-col items-stretch justify-end gap-0.5">
+            <div key={labels[i]} className="flex h-full flex-1 items-end justify-center gap-0.5">
+              <div
+                className="w-[42%] max-w-[14px] rounded-t-md bg-navy"
+                style={{ height: Math.max(v > 0 ? 6 : 0, ha) }}
+                title={`${aLabel}: ${v}`}
+              />
               {b ? (
                 <div
-                  className="w-full rounded-sm bg-brand-2/85"
-                  style={{ height: `${hB}%`, minHeight: b[i] > 0 ? 4 : 0 }}
-                  title={`Состоялось: ${b[i]}`}
+                  className="w-[42%] max-w-[14px] rounded-t-md bg-brand"
+                  style={{ height: Math.max(b[i] > 0 ? 6 : 0, hb) }}
+                  title={`${bLabel}: ${b[i]}`}
                 />
               ) : null}
-              <div
-                className="w-full rounded-sm bg-navy"
-                style={{ height: `${hA}%`, minHeight: v > 0 ? 6 : 0 }}
-                title={`Сформировано: ${v}`}
-              />
             </div>
           )
         })}
       </div>
-      <div className="mt-2 flex gap-1.5">
+      <div className="mt-2 flex gap-2 border-t border-line pt-2">
         {labels.map((l) => (
-          <span key={l} className="flex-1 text-center font-mono text-[9px] text-mist">
+          <span key={l} className="flex-1 text-center font-mono text-[10px] text-mist">
             {l}
           </span>
         ))}
       </div>
-      <p className="mt-2 font-mono text-[10px] text-mist">
-        <span className="mr-3 inline-flex items-center gap-1">
-          <span className="inline-block size-2 rounded-sm bg-navy" /> сформировано
+      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] text-muted">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-navy" />
+          {aLabel}
         </span>
         {b ? (
-          <span className="inline-flex items-center gap-1">
-            <span className="inline-block size-2 rounded-sm bg-brand-2" /> состоялось
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-brand" />
+            {bLabel}
           </span>
         ) : null}
-      </p>
+      </div>
     </div>
   )
 }

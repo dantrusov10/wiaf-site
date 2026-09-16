@@ -28,6 +28,8 @@ export type Draft = AppLot
 
 type Store = {
   sessionUserId: string | null
+  /** Режим просмотра ЛК: какая орг-роль сейчас «надета». */
+  viewAsOrgRole: OrgRole | null
   users: User[]
   lots: AppLot[]
   tickets: Ticket[]
@@ -37,7 +39,7 @@ type Store = {
   activity: ActivityEvent[]
 }
 
-const KEY = 'wiaf-local-v11'
+const KEY = 'wiaf-local-v12'
 
 function defaultPlan(role: Role, subscribed: boolean): PlanId {
   if (role === 'importer') return subscribed ? 'imp-zakupka' : 'imp-free'
@@ -85,6 +87,7 @@ function pushActivity(
 
 const empty: Store = {
   sessionUserId: null,
+  viewAsOrgRole: null,
   users: seedUsers,
   lots: seedLots(),
   tickets: seedTickets,
@@ -101,6 +104,7 @@ function read(): Store {
     const parsed = JSON.parse(raw) as Partial<Store>
     return {
       sessionUserId: parsed.sessionUserId ?? null,
+      viewAsOrgRole: parsed.viewAsOrgRole ?? null,
       users: (parsed.users?.length ? parsed.users : seedUsers).map(migrateUser),
       lots: parsed.lots?.length ? parsed.lots : seedLots(),
       tickets: parsed.tickets ?? [],
@@ -213,6 +217,11 @@ type RegisterInput = {
 
 type Ctx = Store & {
   user: User | null
+  /** Эффективная орг-роль: viewAs или родная роль пользователя. */
+  effectiveOrgRole: OrgRole
+  /** Роли, доступные для переключения (из команды + родная). */
+  availableOrgRoles: OrgRole[]
+  setViewAsOrgRole: (role: OrgRole) => void
   login: (inn: string, password: string) => string | null
   logout: () => void
   register: (input: RegisterInput) => string | null
@@ -251,17 +260,46 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const user = store.users.find((u) => u.id === store.sessionUserId) ?? null
 
+  const availableOrgRoles = useMemo<OrgRole[]>(() => {
+    if (!user) return []
+    const fromTeam = store.team.filter((t) => t.orgUserId === user.id && t.active).map((t) => t.orgRole)
+    const set = new Set<OrgRole>([user.orgRole ?? 'owner', ...fromTeam])
+    // owner всегда может примерить все уровни
+    if ((user.orgRole ?? 'owner') === 'owner' || (user.orgRole ?? 'owner') === 'director') {
+      ;(['owner', 'director', 'manager', 'employee'] as OrgRole[]).forEach((r) => set.add(r))
+    }
+    const order: OrgRole[] = ['owner', 'director', 'manager', 'employee']
+    return order.filter((r) => set.has(r))
+  }, [user, store.team])
+
+  const effectiveOrgRole: OrgRole =
+    (store.viewAsOrgRole && availableOrgRoles.includes(store.viewAsOrgRole)
+      ? store.viewAsOrgRole
+      : user?.orgRole) ?? 'owner'
+
   const value = useMemo<Ctx>(
     () => ({
       ...store,
       user,
+      effectiveOrgRole,
+      availableOrgRoles,
+      setViewAsOrgRole: (role) => {
+        if (!user) return
+        if (!availableOrgRoles.includes(role)) return
+        patch((s) => ({ ...s, viewAsOrgRole: role }))
+      },
       login: (inn, password) => {
         const found = store.users.find((u) => u.inn === inn.replace(/\s/g, '') && u.password === password)
         if (!found) return 'Неверный ИНН или пароль'
-        patch((s) => ({ ...s, sessionUserId: found.id }))
+        patch((s) => ({
+          ...s,
+          sessionUserId: found.id,
+          // Owner по умолчанию в операционке; «директор» — явное переключение
+          viewAsOrgRole: (found.orgRole ?? 'owner') === 'owner' ? 'manager' : (found.orgRole ?? 'owner'),
+        }))
         return null
       },
-      logout: () => patch((s) => ({ ...s, sessionUserId: null })),
+      logout: () => patch((s) => ({ ...s, sessionUserId: null, viewAsOrgRole: null })),
       register: (input) => {
         const inn = input.inn.replace(/\s/g, '')
         if (inn.length < 10) return 'ИНН: 10 или 12 цифр'
@@ -572,7 +610,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         })),
       addTeamMember: (input) => {
         if (!user) return 'Нужен вход'
-        if (user.orgRole === 'employee') return 'Нет права добавлять сотрудников'
+        const lens = store.viewAsOrgRole ?? user.orgRole ?? 'owner'
+        if (lens === 'employee' || lens === 'manager') return 'Нет права добавлять сотрудников'
         const name = input.name.trim()
         const email = input.email.trim().toLowerCase()
         if (!name || !email.includes('@')) return 'Имя и e-mail обязательны'
@@ -600,7 +639,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       removeTeamMember: (id) => {
         if (!user) return 'Нужен вход'
-        if (user.orgRole === 'employee') return 'Нет права удалять'
+        const lens = store.viewAsOrgRole ?? user.orgRole ?? 'owner'
+        if (lens === 'employee' || lens === 'manager') return 'Нет права удалять'
         const m = store.team.find((t) => t.id === id && t.orgUserId === user.id)
         if (!m) return 'Сотрудник не найден'
         if (m.orgRole === 'owner') return 'Owner удалить нельзя'
@@ -613,6 +653,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       setTeamMemberActive: (id, active) => {
         if (!user) return 'Нужен вход'
+        const lens = store.viewAsOrgRole ?? user.orgRole ?? 'owner'
+        if (lens === 'employee' || lens === 'manager') return 'Нет права'
         const m = store.team.find((t) => t.id === id && t.orgUserId === user.id)
         if (!m) return 'Сотрудник не найден'
         if (m.orgRole === 'owner') return 'Owner нельзя отключить'
@@ -626,9 +668,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         })
         return null
       },
-      resetDemo: () => patch(() => ({ ...structuredClone(empty), sessionUserId: store.sessionUserId })),
+      resetDemo: () => patch(() => ({ ...structuredClone(empty), sessionUserId: store.sessionUserId, viewAsOrgRole: store.viewAsOrgRole })),
     }),
-    [store, user],
+    [store, user, effectiveOrgRole, availableOrgRoles],
   )
 
   return <SessionCtx.Provider value={value}>{children}</SessionCtx.Provider>

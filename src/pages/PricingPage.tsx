@@ -194,7 +194,7 @@ export function PricingPage() {
           </ul>
         </section>
       </div>
-      <PageLeadCta variant="importer" />
+      <PageLeadCta variant="pricing" />
     </main>
   )
 }

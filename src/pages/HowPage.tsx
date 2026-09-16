@@ -64,7 +64,7 @@ export function HowPage() {
           </div>
         </div>
       </div>
-      <PageLeadCta variant="guide" />
+      <PageLeadCta variant="director" />
     </main>
   )
 }

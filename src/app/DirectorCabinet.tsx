@@ -547,13 +547,13 @@ export function DirectorActivity() {
 }
 
 export function DirectorTeam() {
-  const { user, team, addTeamMember, removeTeamMember, setTeamMemberActive } = useSession()
+  const { user, team, addTeamMember, removeTeamMember, setTeamMemberActive, effectiveOrgRole } = useSession()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [orgRole, setOrgRole] = useState<OrgRole>('employee')
   const [err, setErr] = useState<string | null>(null)
   const rows = team.filter((t) => t.orgUserId === user?.id)
-  const canEdit = user?.orgRole !== 'employee'
+  const canEdit = effectiveOrgRole === 'owner' || effectiveOrgRole === 'director'
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()

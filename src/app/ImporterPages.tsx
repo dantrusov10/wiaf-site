@@ -119,7 +119,7 @@ export function ImporterHome() {
             Подписка
           </Link>
           <Link to="/app/importer/director" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold">
-            Директору
+            Смотреть как директор
           </Link>
           <Link to="/help" className="rounded-lg px-4 py-2.5 text-[13px] font-medium text-muted hover:text-ink">
             База

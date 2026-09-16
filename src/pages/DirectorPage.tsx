@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { DirectorLeadForm } from '../components/LeadMagnet'
+import { DirectorLeadForm, PageLeadCta } from '../components/LeadMagnet'
 import { PageHero } from '../components/PageHero'
 
 export function DirectorPage() {
@@ -8,7 +8,7 @@ export function DirectorPage() {
       <PageHero
         kicker="Директору"
         title="Сводка часов, сравнение с рынком и автоотчёты"
-        dek="В кабинете заказчика — интерфейс директора: аналитика, условия лотов, сравнение с типичными ставками, статьи и курсы ЦБ. Регистрация бесплатная. Комиссия с победителя 1%, не более 5 000 ₽."
+        dek="В ЛК — режим «смотреть как директор»: аналитика, журнал действий, команда и автоотчёты. Регистрация бесплатная. Комиссия с победителя 1%, не более 5 000 ₽."
       />
       <div className="mx-auto max-w-6xl px-5 py-12">
         <div className="grid gap-6 lg:grid-cols-2">
@@ -27,8 +27,8 @@ export function DirectorPage() {
           <article className="rounded-xl border border-line bg-white p-6">
             <h2 className="text-lg font-semibold">Где открыть</h2>
             <p className="mt-3 text-[14px] leading-relaxed text-muted">
-              Войдите как заказчик → раздел «Директору»: сводка, отчёты, статьи, курсы ЦБ. Подписка на инструменты — отдельный
-              пункт «Подписка» в ЛК (не только на сайте).
+              Войдите как заказчик или исполнитель → в шапке ЛК «Смотреть как» выберите роль (директор / руководитель /
+              сотрудник). Меню и доступ меняются целиком. Подписка на инструменты — в режиме операционки.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link to="/app/login?role=importer" className="inline-flex rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
@@ -44,6 +44,7 @@ export function DirectorPage() {
           </article>
         </div>
       </div>
+      <PageLeadCta variant="importer" />
     </main>
   )
 }
