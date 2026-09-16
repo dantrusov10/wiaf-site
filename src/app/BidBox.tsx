@@ -99,7 +99,7 @@ export function BidBox({ lot, compact }: { lot: AppLot; compact?: boolean }) {
       </div>
       {locked ? (
         <p className="mt-2 text-[13px] text-danger">
-          На счёте нужно ≥ {ruInt.format(needHold)} ₽ (1% от этой ставки
+          На счёте нужно от {ruInt.format(needHold)} ₽ (1% от этой ставки
           {feePreview ? `, ≈ ${ruInt.format(feePreview)} ₽` : ''}). Сейчас {ruInt.format(balance)} ₽.{' '}
           <Link to="/app/forwarder/balance" className="underline underline-offset-4">
             Пополнить
@@ -107,11 +107,11 @@ export function BidBox({ lot, compact }: { lot: AppLot; compact?: boolean }) {
         </p>
       ) : (
         <p className="mt-2 text-[12px] text-mist">
-          Холд под эту ставку: {ruInt.format(needHold)} ₽ · если выиграете — комиссия 1% ≈ {ruInt.format(feePreview)} ₽
-          (потолок 5 000 ₽)
+          На счёте под эту ставку: {ruInt.format(needHold)} ₽ · если выиграете — комиссия 1% ≈ {ruInt.format(feePreview)} ₽
+          (не более 5 000 ₽)
         </p>
       )}
-      {closed ? <p className="mt-2 text-[13px] text-muted">Слот закрыт или это шаблон — ставить нельзя.</p> : null}
+      {closed ? <p className="mt-2 text-[13px] text-muted">Лот закрыт или это шаблон — ставить нельзя.</p> : null}
       <div className="mt-3 flex flex-wrap items-end gap-2">
         <label className="min-w-[140px] flex-1">
           <span className="text-[11px] text-mist">Ваша ставка, $</span>

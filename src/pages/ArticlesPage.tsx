@@ -44,7 +44,7 @@ export function ArticlesPage() {
           <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Блог wIaF</h1>
             <p className="mt-2 max-w-2xl text-[15px] text-muted">
-              Кейсы под NDA, деньги площадки и правила часа — без мета-сравнений.
+              Кейсы, деньги площадки и правила часа.
             </p>
           </div>
           <ThemeIcon id="tips" size={88} />

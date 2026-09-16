@@ -40,10 +40,10 @@ export function PlanPage({ role }: { role: 'importer' | 'forwarder' }) {
         <ThemeIcon id="tips" size={72} />
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist">Подписка</p>
-          <h1 className="mt-1 text-2xl font-semibold">Тарифы и инструменты</h1>
+          <h1 className="mt-1 text-2xl font-semibold">Тарифы</h1>
           <p className="mt-1 max-w-2xl text-[13.5px] text-muted">
-            Аукцион на Free не запирается. Подписка открывает журнал, калькуляторы, КП и умные подсказки: у заказчика — по
-            шагу создания лота; у исполнителя — в момент ставки. {moneyCopy.freeReg}. {moneyCopy.commissionLong}.
+            Торги доступны без подписки. Платный тариф открывает журнал, калькуляторы и подсказки при создании лота или
+            ставке. {moneyCopy.freeReg}. {moneyCopy.commissionLong}.
           </p>
         </div>
       </div>

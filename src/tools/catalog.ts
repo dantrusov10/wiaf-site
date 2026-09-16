@@ -79,7 +79,7 @@ export const toolsCatalog: ToolDef[] = [
   },
   {
     slug: 'allin',
-    title: 'Сборка all-in',
+    title: 'Сборка полной цены',
     dek: 'Из «голого» фрахта в сумму для клиента: что добавить и зачем',
     tag: 'Котировка',
     roles: ['forwarder'],
@@ -102,7 +102,7 @@ export const landingToolExamples = [
     items: [
       { name: 'Партия на складе', example: 'Фрахт $4 200 vs медиана слота $3 120 · себестоимость 1 012 ₽/шт' },
       { name: 'Сделка', example: 'EXW → карта кто платит → документы → текст в WhatsApp' },
-      { name: 'Журнал котировок', example: '3 КП → вилка $4.1–4.8k · кого звать на час' },
+      { name: 'Журнал котировок', example: '3 КП → $4.1–4.8k · кого позвать на час' },
     ],
   },
   {
@@ -110,7 +110,7 @@ export const landingToolExamples = [
     title: 'В кабинете исполнителя',
     items: [
       { name: 'Книга тарифов', example: 'Закуп $3 800 → продажа $4 500 · маржа 18%' },
-      { name: 'Сборка all-in', example: 'База $2 900 + THC + DOC = $3 105 клиенту' },
+      { name: 'Сборка полной цены', example: 'База $2 900 + THC + DOC = $3 105 клиенту' },
       { name: 'Конструктор КП', example: 'Разбивка + free time → текст в чат' },
     ],
   },

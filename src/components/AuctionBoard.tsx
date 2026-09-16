@@ -92,7 +92,7 @@ export function AuctionBoard({
         )}
       </div>
       <p className="border-t border-line px-4 py-2.5 font-mono text-[11px] text-mist">
-        Слепые торги · 60 мин · до 5 ставок · шаг $1 · состоялись при ≥2
+        Слепые торги · 60 мин · до 5 ставок · шаг $1 · нужны минимум двое
       </p>
     </div>
   )

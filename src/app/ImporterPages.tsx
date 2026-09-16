@@ -101,14 +101,15 @@ export function ImporterHome() {
         <div className="rounded-xl border border-brand/30 bg-brand/5 px-4 py-3">
           <p className="text-[14px] font-semibold">Онбординг заказчика</p>
           <p className="mt-1 text-[13px] text-muted">
-            1) Выложите слот (можно с префиллом гида). 2) Позовите троих знакомых экспедиторов. 3) Час считается состоявшимся при ≥2 ставках.
+            1) Заполните лот — в гиде можно взять готовый пример. 2) Позовите троих знакомых экспедиторов. 3) Час
+            состоится, если ставят минимум двое.
           </p>
           <div className="mt-2 flex flex-wrap gap-3">
             <Link to="/app/importer/create?guide=1" className="text-[13px] font-semibold text-brand underline">
-              Форма с префиллом
+              Открыть форму с примером
             </Link>
             <Link to="/guide" className="text-[13px] font-semibold underline">
-              Гид 10 мин
+              Гид за 10 минут
             </Link>
           </div>
         </div>
@@ -116,9 +117,9 @@ export function ImporterHome() {
 
       <div className="rounded-xl border border-line bg-white p-5 md:p-6">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist">Кабинет заказчика</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Закупка и слоты</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Ваши лоты</h1>
         <p className="mt-1 max-w-xl text-[13.5px] text-muted">
-          {user?.company} · сначала партия и свои экспедиторы — потом час.
+          {user?.company} · сначала опишите груз и позовите своих экспедиторов, потом час торгов.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link to="/app/importer/create" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
@@ -252,8 +253,8 @@ export function ImporterCreate() {
         container: 'Сборный',
         incoterm: 'EXW',
         cargoValue: '48000',
-        shipperName: 'Фабрика (демо из гида)',
-        shipperAddress: 'Guangzhou, demo',
+        shipperName: 'Фабрика (пример из гида)',
+        shipperAddress: 'Guangzhou',
         maxBidUsd: '4500',
         ready: todayDd(),
         date: plusDays(todayDd(), 3),
@@ -953,7 +954,7 @@ export function ImporterCurrent() {
   return (
     <DraftList
       title="Текущие"
-      hint="Очередь и живой слот. Без опечатки «ТЕКУШИЕ»."
+      hint="Очередь и идущий час."
       items={mine.filter((d) => {
         const st = lotStatus(d, now)
         return !d.archived && (st === 'scheduled' || st === 'live')
@@ -967,7 +968,7 @@ export function ImporterHeld() {
   return (
     <DraftList
       title="Состоялись"
-      hint="≥ 2 исполнителя со ставками. Показаны незакрытые в архив. Кнопка «Фильтр» — по всем полям."
+      hint="≥ 2 исполнителя со ставками. Ещё не в архиве."
       items={mine.filter((d) => lotStatus(d, now) === 'held' && !d.archived)}
     />
   )
@@ -1057,7 +1058,7 @@ export function ImporterArchive() {
   return (
     <DraftList
       title="Архив"
-      hint="Старые закрытые слоты. Не путать с «не состоялись». Кнопка «Фильтр» — по всем полям."
+      hint="Старые закрытые лоты. Не путать с «не состоялись»."
       items={mine.filter((d) => d.archived)}
     />
   )
@@ -1186,7 +1187,7 @@ export function ImporterLot() {
         <div className="rounded-xl border border-line bg-white p-5">
           <p className="font-semibold">Час не состоялся</p>
           <p className="mt-1 text-[13.5px] text-muted">
-            Меньше двух исполнителей со ставками. Позовите «своих троих» и поставьте новый слот — плотность важнее холодных звонков.
+            Меньше двух исполнителей со ставками. Позовите знакомых перевозчиков и поставьте новый час.
           </p>
           <Link to="/guide" className="mt-3 inline-block text-[13px] font-semibold text-brand underline">
             Гид: как собрать час

@@ -184,7 +184,7 @@ export function GuidePage() {
                 to="/app/importer/create?guide=1"
                 className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold"
               >
-                Уже вошёл — форма с префиллом
+                Уже вошёл — открыть форму с примером
               </Link>
             </div>
           </article>

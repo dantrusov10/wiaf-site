@@ -74,7 +74,7 @@ export function Roles() {
           <TrustChip id="auction" title="Слепые торги" text="Нет окна сговора в чате" />
           <TrustChip id="commission" title="Комиссия 1%" text={moneyCopy.commissionHint} />
           <TrustChip id="balance" title="Импортёру ноль" text="Сервис без оплаты" />
-          <TrustChip id="hold" title="Счёт исполнителя" text="От 1 000 ₽ + холд под лот" />
+          <TrustChip id="hold" title="Счёт исполнителя" text="От 1 000 ₽; под ставку — 1%, макс. 5 000 ₽" />
         </ul>
       </div>
     </section>

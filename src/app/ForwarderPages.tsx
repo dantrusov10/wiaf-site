@@ -171,7 +171,7 @@ export function ForwarderHome() {
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist">Кабинет исполнителя</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">Ставки и маржа</h1>
         <p className="mt-1 max-w-xl text-[13.5px] text-muted">
-          {user?.company} · сначала all-in, потом лента. Ставка — если хватает на 1% от цифры.
+          {user?.company} · сначала посмотрите условия лота, потом ставьте. На счёте должно хватать на 1% от ставки.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <div className="rounded-lg border border-line px-4 py-2">
@@ -201,7 +201,7 @@ export function ForwarderHome() {
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <Panel title="Открытые слоты сейчас" action={<Link to="/app/forwarder/china" className="text-[13px] underline">лента</Link>}>
           {open.length === 0 ? (
-            <EmptyState title="Сейчас пусто" text="Включите почту по ленте и ждите Китай. Турцию не обещаем, если слотов нет." to="/app/forwarder/china" cta="Открыть ленту" />
+            <EmptyState title="Сейчас пусто" text="Включите письма по ленте и ждите лоты по Китаю. По другим странам слоты появляются, когда заказчики их выкладывают." to="/app/forwarder/china" cta="Открыть ленту" />
           ) : (
             <ul className="divide-y divide-line text-[13.5px]">
               {open.slice(0, 5).map((l) => (
@@ -258,7 +258,7 @@ export function ForwarderHome() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Выиграно / сыграно" value={`${won.length} / ${played}`} hint={`win rate ${winRate}%`} spark={forwarderWeek.map((w) => w.won)} />
-        <Stat label="Комиссия" value={`${ruInt.format(commission)} ₽`} hint="1%, ≤5 000 ₽" />
+        <Stat label="Комиссия" value={`${ruInt.format(commission)} ₽`} hint="1%, не более 5 000 ₽" />
         <Stat label="Оборот побед" value={`$${ruInt.format(turnover)}`} hint="сумма выигравших ставок" />
         <Stat label="Ваших ставок" value={String(myBids)} hint="по всем лотам" />
       </div>
@@ -506,7 +506,7 @@ export function ForwarderWon() {
   return (
     <DealList
       title="Выигранные"
-      hint="Победы по вашим ставкам. Кнопка «Фильтр» — по всем полям."
+      hint="Победы по вашим ставкам."
       items={deals.filter((d) => d.status === 'won')}
     />
   )
@@ -519,7 +519,7 @@ export function ForwarderHistory() {
   return (
     <DealList
       title="История ставок"
-      hint="Выигранные и проигранные вместе. Drill-down с графика недель подставляет фильтр."
+      hint="Выигранные и проигранные вместе. С графика недель подставляется фильтр по неделе."
       items={deals.filter((d) => d.status === 'won' || d.status === 'lost')}
     />
   )
@@ -532,7 +532,7 @@ export function ForwarderLost() {
   return (
     <DealList
       title="Проигранные"
-      hint="Сыграли, но победа у другого. Кнопка «Фильтр» — по всем полям."
+      hint="Час сыграли, победа у другого."
       items={deals.filter((d) => d.status === 'lost')}
     />
   )
@@ -545,7 +545,7 @@ export function ForwarderArchive() {
   return (
     <DealList
       title="Архив"
-      hint="Закрытые слоты с вашей ставкой. Кнопка «Фильтр» — по всем полям."
+      hint="Закрытые лоты, где вы ставили."
       items={deals.filter((d) => d.status === 'archive')}
     />
   )
@@ -568,10 +568,10 @@ export function ForwarderBalance() {
       <h1 className="text-2xl font-semibold">Счёт</h1>
       {balance < 1000 ? (
         <div className="rounded-xl border border-brand/30 bg-brand/5 px-4 py-3">
-          <p className="text-[14px] font-semibold">Онбординг исполнителя</p>
+          <p className="text-[14px] font-semibold">С чего начать</p>
           <p className="mt-1 text-[13px] text-muted">
-            1) Пополните от 1 000 ₽ (демо-кнопки ниже). 2) Откройте ленту Китая. 3) Ставьте — на балансе должен быть холд:
-            1% от ставки, не более 5 000 ₽.
+            1) Пополните счёт от 1 000 ₽ (кнопки ниже — демо). 2) Откройте ленту Китая. 3) Ставьте, если на балансе
+            хватает на 1% от ставки (не больше 5 000 ₽).
           </p>
           <Link to="/app/forwarder/china" className="mt-2 inline-block text-[13px] font-semibold text-brand underline">
             К ленте после пополнения →
@@ -582,15 +582,15 @@ export function ForwarderBalance() {
         <Stat
           label="Доступно"
           value={`${ruInt.format(balance)} ₽`}
-          hint={balance >= 1000 ? 'активен · холд = 1% ставки' : 'нужно ≥ 1 000 ₽'}
+          hint={balance >= 1000 ? 'можно ставить' : 'нужно от 1 000 ₽'}
         />
         <Stat label="Пополнено всего" value={`${ruInt.format(topped)} ₽`} />
         <Stat label="Комиссия списана" value={`${ruInt.format(commission)} ₽`} />
       </div>
       <Panel title="Пополнить">
         <p className="mb-3 text-[13px] text-muted">
-          Минимум 1 000 ₽ за раз. Чтобы ставить на лот, на счёте должно хватать на 1% от вашей ставки, но не больше
-          потолка комиссии 5 000 ₽. Деньги никуда не уходят — только этот браузер.
+          Минимум 1 000 ₽ за раз. Чтобы поставить ставку, на счёте должно хватать на 1% от неё в рублях, но не больше
+          5 000 ₽. Здесь это демо в браузере — деньги никуда не уходят.
         </p>
         <div className="flex flex-wrap gap-2">
           {amounts.map((n) => (

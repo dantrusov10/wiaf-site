@@ -27,17 +27,18 @@ export function HomePage() {
       <section className="border-b border-line bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-wide text-mist">Плотность часов</p>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-mist">Сейчас</p>
             <p className="mt-0.5 text-[15px] text-ink">
-              В ленте <span className="font-semibold text-brand">{live.length}</span> · состоялось в демо{' '}
-              <span className="font-semibold">{held.length}</span>
+              В ленте <span className="font-semibold text-brand">{live.length}</span>
+              {' · '}
+              состоялось <span className="font-semibold">{held.length}</span>
             </p>
             <p className="mt-1 max-w-xl text-[13px] text-muted">
-              Плотность даёт приглашение «своих троих», не холод. KPI — состоявшийся час (≥2 ставки).
+              Час проходит, если ставят минимум двое. Поэтому логист зовёт своих экспедиторов — без холодных обзвонов.
             </p>
           </div>
           <Link to="/guide" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold hover:border-brand">
-            Как собрать час →
+            Как провести первый час →
           </Link>
         </div>
       </section>
@@ -50,7 +51,7 @@ export function HomePage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold">Недавние состоявшиеся</h2>
-              <p className="mt-1 text-[13px] text-muted">Вилка без имён фирм. Не обязанность закупить.</p>
+              <p className="mt-1 text-[13px] text-muted">Минимальная ставка без названий компаний. Это ориентир, не обязанность купить.</p>
             </div>
             <Link to="/auctions" className="text-[13px] font-medium underline">
               Вся лента
@@ -62,7 +63,7 @@ export function HomePage() {
                 <tr>
                   <th className="px-4 py-2.5">Код</th>
                   <th className="px-4 py-2.5">Маршрут</th>
-                  <th className="hidden px-4 py-2.5 sm:table-cell">Win $</th>
+                  <th className="hidden px-4 py-2.5 sm:table-cell">Min $</th>
                   <th className="px-4 py-2.5">Игроки</th>
                 </tr>
               </thead>
@@ -94,8 +95,8 @@ export function HomePage() {
         <div className="mx-auto max-w-6xl px-5 py-12">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold">Кейсы под NDA</h2>
-              <p className="mt-1 text-[13px] text-muted">Анонимные истории заказчиков и исполнителей. Без холодных цифр «рынка».</p>
+              <h2 className="text-xl font-semibold">Кейсы</h2>
+              <p className="mt-1 text-[13px] text-muted">Анонимные истории заказчиков и исполнителей. Имена не публикуем.</p>
             </div>
             <Link to="/articles?cat=Кейсы" className="text-[13px] font-medium underline">
               Все кейсы
@@ -125,10 +126,11 @@ export function HomePage() {
         <div className="mx-auto max-w-6xl px-5 py-10">
           <div className="rounded-2xl border border-line bg-navy px-6 py-8 text-paper md:flex md:items-center md:justify-between md:gap-8 md:px-8">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-wide text-brand-2">Аукцион и инструменты</p>
-              <h2 className="mt-1 text-2xl font-semibold">Слот — бесплатно. Tools — по желанию</h2>
+              <p className="font-mono text-[10px] uppercase tracking-wide text-brand-2">Тарифы</p>
+              <h2 className="mt-1 text-2xl font-semibold">Торги бесплатны. Калькуляторы — если нужны</h2>
               <p className="mt-2 max-w-lg text-[14px] text-fog">
-                Торг не запираем подпиской. {moneyCopy.commissionShort}. «Закупка» / «Стол» — журнал и подсказки между часами.
+                Выложить груз и ставить можно без подписки. {moneyCopy.commissionShort}. Платные тарифы «Закупка» и «Стол» —
+                журнал и расчёты между часами.
               </p>
             </div>
             <div className="mt-5 flex flex-wrap gap-2 md:mt-0">

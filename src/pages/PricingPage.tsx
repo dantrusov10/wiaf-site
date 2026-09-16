@@ -39,9 +39,9 @@ function PlanHeroCard({ plan, accent }: { plan: PlanHero; accent: 'brand' | 'bra
   return (
     <article className={`flex flex-col rounded-2xl border p-5 ${ring}`}>
       {plan.highlight ? (
-        <p className={`font-mono text-[10px] uppercase tracking-wide ${badge}`}>Главная ценность</p>
+        <p className={`font-mono text-[10px] uppercase tracking-wide ${badge}`}>Рекомендуем</p>
       ) : (
-        <p className="font-mono text-[10px] uppercase tracking-wide text-mist">Ярус</p>
+        <p className="font-mono text-[10px] uppercase tracking-wide text-mist">Тариф</p>
       )}
       <h3 className="mt-1 text-lg font-semibold">{plan.name}</h3>
       <p className="mt-3 font-display text-3xl font-medium tracking-tight">
@@ -56,11 +56,11 @@ function PlanHeroCard({ plan, accent }: { plan: PlanHero; accent: 'brand' | 'bra
           <dd className="mt-0.5 text-ink">{plan.forWhom}</dd>
         </div>
         <div>
-          <dt className="font-mono text-[10px] uppercase tracking-wide text-mist">Что получаете</dt>
+          <dt className="font-mono text-[10px] uppercase tracking-wide text-mist">Что входит</dt>
           <dd className="mt-0.5 font-medium text-ink">{plan.outcome}</dd>
         </div>
       </dl>
-      <p className="mt-auto pt-5 text-[12px] text-mist">{plan.cta} · оплата после пилота</p>
+      <p className="mt-auto pt-5 text-[12px] text-mist">{plan.cta}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         <Link
           to={`/app/register?role=${accent === 'brand' ? 'importer' : 'forwarder'}`}
@@ -93,7 +93,7 @@ function CompareMatrix({
         <thead>
           <tr className="border-b border-line bg-fog/60">
             <th className="px-4 py-3 text-[12px] font-semibold text-ink sm:px-5">Что сравниваем</th>
-            <th className="w-[18%] px-2 py-3 text-center text-[12px] font-semibold">Free</th>
+            <th className="w-[18%] px-2 py-3 text-center text-[12px] font-semibold">Бесплатно</th>
             <th className="w-[22%] px-2 py-3 text-center text-[12px] font-semibold">{midLabel}</th>
             <th className="w-[22%] px-2 py-3 text-center text-[12px] font-semibold">{proLabel}</th>
           </tr>
@@ -127,8 +127,8 @@ export function PricingPage() {
     <main>
       <PageHero
         kicker="Тарифы"
-        title="Аукцион бесплатен. Инструменты — отдельно"
-        dek="Слот и ставка не запираются подпиской. Комиссия с победителя — 1%, не более 5 000 ₽. «Закупка» / «Стол» — журнал и подсказки между часами."
+        title="Торги бесплатны. Калькуляторы — в подписке"
+        dek="Выложить груз и ставить можно без тарифа. Комиссия с победителя — 1%, не более 5 000 ₽. «Закупка» и «Стол» — журнал и расчёты между часами."
       />
 
       <div className="mx-auto max-w-6xl space-y-16 px-5 py-10">
@@ -149,9 +149,9 @@ export function PricingPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="font-mono text-[11px] uppercase tracking-wide text-brand">Заказчик</p>
-              <h2 className="mt-1 text-xl font-semibold">Три яруса закупки</h2>
+              <h2 className="mt-1 text-xl font-semibold">Тарифы для заказчика</h2>
               <p className="mt-1 max-w-xl text-[14px] text-muted">
-                Free — только слот. Закупка — все инструменты. Pro — команда и проверки поставщиков.
+                Бесплатно — только торги. «Закупка» — калькуляторы и журнал. Pro — команда и проверки поставщиков.
               </p>
             </div>
             <Link to="/app/register?role=importer" className="text-[13px] font-semibold underline">
@@ -164,7 +164,7 @@ export function PricingPage() {
             ))}
           </div>
           <h3 className="mt-10 text-[15px] font-semibold">Что именно отличается</h3>
-          <p className="mt-1 text-[13px] text-muted">Не «всё из Free + …», а строка за строкой — где ценность появляется.</p>
+          <p className="mt-1 text-[13px] text-muted">Что входит в бесплатный доступ и в платные тарифы.</p>
           <div className="mt-4">
             <CompareMatrix rows={importerMatrix} midLabel="Закупка" proLabel="Pro" />
           </div>
@@ -174,9 +174,9 @@ export function PricingPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="font-mono text-[11px] uppercase tracking-wide text-brand-2">Исполнитель</p>
-              <h2 className="mt-1 text-xl font-semibold">Три яруса стола</h2>
+              <h2 className="mt-1 text-xl font-semibold">Тарифы для исполнителя</h2>
               <p className="mt-1 max-w-xl text-[14px] text-muted">
-                Free — только ставки. Стол — все инструменты. Pro — несколько логистов и плеч.
+                Бесплатно — только ставки. «Стол» — расчёты и КП. Pro — несколько логистов и направлений.
               </p>
             </div>
             <Link to="/app/login?role=forwarder" className="text-[13px] font-semibold underline">
@@ -189,7 +189,7 @@ export function PricingPage() {
             ))}
           </div>
           <h3 className="mt-10 text-[15px] font-semibold">Что именно отличается</h3>
-          <p className="mt-1 text-[13px] text-muted">Правила счёта и 1% с победы — на всех ярусах. Инструменты — со «Стола».</p>
+          <p className="mt-1 text-[13px] text-muted">Правила счёта и комиссия 1% с победы — на любом тарифе. Расчёты — в «Столе».</p>
           <div className="mt-4">
             <CompareMatrix rows={forwarderMatrix} midLabel="Стол" proLabel="Pro" />
           </div>
@@ -219,13 +219,13 @@ export function PricingTeaser() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-wide text-brand">Тарифы</p>
-            <h2 className="mt-1 text-xl font-semibold">Free — слот. Инструменты — по желанию</h2>
+            <h2 className="mt-1 text-xl font-semibold">Торги бесплатны. Калькуляторы — если нужны</h2>
             <p className="mt-2 max-w-xl text-[14px] text-muted">
-              Аукцион подпиской не запираем. Журнал и landed — в «Закупке» / «Столе».
+              Подписка не нужна, чтобы выложить груз или поставить ставку. Журнал и расчёты — в «Закупке» и «Столе».
             </p>
           </div>
           <Link to="/pricing" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-navy-2">
-            Сравнить ярусы
+            Смотреть тарифы
           </Link>
         </div>
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

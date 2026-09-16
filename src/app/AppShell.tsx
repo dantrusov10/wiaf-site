@@ -44,8 +44,8 @@ function importerOps(): Group[] {
       items: [
         { to: '/app/importer', end: true, label: 'Обзор', icon: LayoutDashboard },
         { to: '/app/importer/create', label: 'Новый лот', icon: FilePlus },
-        { to: '/app/importer/tools', label: 'Инструменты', icon: Calculator },
-        { to: '/app/importer/plan', label: 'Подписка', icon: CreditCard },
+        { to: '/app/importer/tools', label: 'Калькуляторы', icon: Calculator },
+        { to: '/app/importer/plan', label: 'Тариф', icon: CreditCard },
         { to: '/rates', label: 'Курсы ЦБ', icon: LineChart },
         { to: '/help', label: 'База', icon: BookOpen },
       ],
@@ -74,8 +74,8 @@ function forwarderOps(): Group[] {
       title: 'Стол',
       items: [
         { to: '/app/forwarder', end: true, label: 'Обзор', icon: LayoutDashboard },
-        { to: '/app/forwarder/tools', label: 'Маржа и КП', icon: Calculator },
-        { to: '/app/forwarder/plan', label: 'Подписка', icon: CreditCard },
+        { to: '/app/forwarder/tools', label: 'Расчёты и КП', icon: Calculator },
+        { to: '/app/forwarder/plan', label: 'Тариф', icon: CreditCard },
         { to: '/app/forwarder/balance', label: 'Счёт', icon: Banknote },
         { to: '/rates', label: 'Курсы ЦБ', icon: LineChart },
         { to: '/help', label: 'База', icon: BookOpen },

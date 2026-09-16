@@ -134,7 +134,7 @@ export function Bars({
             {bLabel}
           </span>
         ) : null}
-        {onBarClick ? <span className="text-mist">клик по столбцу → история с фильтром недели</span> : null}
+        {onBarClick ? <span className="text-mist">нажмите столбец — откроется история за неделю</span> : null}
       </div>
     </div>
   )

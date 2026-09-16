@@ -59,18 +59,18 @@ export function Hero() {
             <div>
               <dt className="font-mono text-[10px] uppercase tracking-wide text-mist">Сейчас в ленте</dt>
               <dd className="mt-1 text-3xl font-semibold tracking-tight text-brand">{live}</dd>
-              <p className="mt-1 text-[12px] text-muted">очередь и идущие слоты</p>
+              <p className="mt-1 text-[12px] text-muted">ожидают и идут сейчас</p>
             </div>
             <div>
               <dt className="font-mono text-[10px] uppercase tracking-wide text-mist">Состоялось</dt>
               <dd className="mt-1 text-3xl font-semibold tracking-tight text-ink">{held}</dd>
-              <p className="mt-1 text-[12px] text-muted">часы с ≥2 исполнителями</p>
+              <p className="mt-1 text-[12px] text-muted">минимум двое со ставками</p>
             </div>
           </dl>
         </motion.div>
         <motion.div initial={{ y: 14 }} animate={{ y: 0 }} transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}>
           <Tilt className="will-change-transform">
-            <DeviceFrame title="wiaf.ru · живые слоты">
+            <DeviceFrame title="wiaf.ru · лента">
               <AuctionBoard />
             </DeviceFrame>
           </Tilt>

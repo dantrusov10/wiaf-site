@@ -6,15 +6,15 @@ export function ImporterPage() {
   return (
     <main>
       <PageHero
-        kicker="Заказчик · Importer"
+        kicker="Заказчик"
         title="Выкладываете груз. Ставку снижают за вас."
-        dek="Для импортёра площадка бесплатна. ЮЛ или ИП — резидент РФ. Форма лота фиксирует условия «за всё», чтобы потом не вылез курс и досыл."
+        dek="Для заказчика площадка бесплатна. ЮЛ или ИП — резидент РФ. В лоте фиксируете условия «за всё», чтобы после часа не выяснилось «это отдельно»."
       />
       <div className="mx-auto max-w-6xl px-5 py-14">
         <div className="grid gap-6 md:grid-cols-2">
           {[
-            ['0 ₽', 'Нет комиссии, нет договора на сервис, нет абонентки.'],
-            ['Исчерпывающее ТЗ', 'Маршрут, кг, м³, вид транспорта, таможня и страховка — по желанию.'],
+            ['0 ₽', 'Нет комиссии площадки, нет абонентской платы за торги.'],
+            ['Полное описание', 'Маршрут, кг, м³, транспорт. Таможня и страховка — только если входят в цену ставки.'],
             ['Слепой аукцион', 'Вы не видите экспедиторов до победы. Они не видят вас.'],
             ['Договор сами', 'После победы стороны сами заключают договор перевозки. Площадка его не подписывает.'],
           ].map(([t, d]) => (
@@ -25,14 +25,11 @@ export function ImporterPage() {
           ))}
         </div>
         <div className="mt-10 flex flex-wrap gap-3">
-          <Link to="/app/login?role=importer" className="rounded-full bg-navy px-5 py-2.5 text-[14px] font-semibold text-white">
-            Войти в кабинет
+          <Link to="/app/register?role=importer" className="rounded-lg bg-brand px-5 py-2.5 text-[14px] font-semibold text-white">
+            Попробовать
           </Link>
-          <Link to="/app/register?role=importer" className="rounded-full border border-line px-5 py-2.5 text-[14px] font-semibold">
-            Регистрация ЮЛ
-          </Link>
-          <Link to="/app/register?role=importer&type=ip" className="rounded-full border border-line px-5 py-2.5 text-[14px] font-semibold">
-            Регистрация ИП
+          <Link to="/app/login?role=importer" className="rounded-lg border border-line px-5 py-2.5 text-[14px] font-semibold">
+            Войти
           </Link>
         </div>
       </div>

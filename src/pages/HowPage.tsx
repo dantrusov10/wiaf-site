@@ -48,11 +48,12 @@ export function HowPage() {
         </div>
         <div className="mt-10 rounded-2xl border border-line bg-white p-6 text-[14.5px] leading-relaxed text-muted">
           <p>
-            Полный текст для этой тестовой площадки —{' '}
+            Полные правила — в{' '}
             <Link to="/rules" className="font-semibold text-ink underline underline-offset-4">
-              правила на этом сайте
+              разделе «Правила»
             </Link>
-            . Кратко: резиденты РФ, слепые торги, шаг и срок задаются в лоте, комиссия только с победителя (1%, ≤5 000 ₽).
+            . Кратко: резиденты РФ, слепые торги, шаг и срок задаются в лоте, комиссия только с победителя (1%, не более 5
+            000 ₽).
           </p>
           <div className="mt-4 flex flex-wrap gap-4">
             <Link to="/faq" className="font-semibold text-ink underline underline-offset-4">
