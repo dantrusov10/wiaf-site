@@ -1,19 +1,17 @@
 export const nav = [
   { to: '/auctions', label: 'Аукционы' },
   { to: '/how', label: 'Как устроено' },
-  { to: '/articles', label: 'Блог' },
   { to: '/pricing', label: 'Тарифы' },
-  { to: '/rates', label: 'Курсы ЦБ' },
+  { to: '/articles', label: 'Блог' },
 ] as const
 
 export const navMore = [
   { to: '/guide', label: 'Гид 10 мин' },
   { to: '/help', label: 'База' },
-  { to: '/director', label: 'Директору' },
+  { to: '/rates', label: 'Курсы ЦБ' },
   { to: '/importer', label: 'Импортёру' },
   { to: '/forwarder', label: 'Экспедитору' },
   { to: '/tools', label: 'Инструменты' },
-  { to: '/news', label: 'Дайджесты' },
   { to: '/rules', label: 'Правила' },
   { to: '/about', label: 'О площадке' },
   { to: '/contacts', label: 'Контакты' },
@@ -21,8 +19,8 @@ export const navMore = [
 
 export const footerNav = [
   { to: '/articles', label: 'Блог' },
+  { to: '/guide', label: 'Гид' },
   { to: '/rates', label: 'Курсы ЦБ' },
-  { to: '/director', label: 'Директору' },
   { to: '/rules', label: 'Правила' },
   { to: '/privacy', label: 'Конфиденциальность' },
 ] as const

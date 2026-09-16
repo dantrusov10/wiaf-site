@@ -6,44 +6,28 @@ export function DirectorPage() {
   return (
     <main>
       <PageHero
-        kicker="Директору"
-        title="Сводка часов, сравнение с рынком и автоотчёты"
-        dek="В ЛК — режим «смотреть как директор»: аналитика, журнал действий, команда и автоотчёты. Регистрация бесплатная. Комиссия с победителя 1%."
+        kicker="В кабинете"
+        title="Режим «Смотреть как директор»"
+        dek="Не отдельный продукт и не рассылка. После входа в шапке ЛК выберите роль — сводка часов, журнал и команда. Регистрация бесплатная."
       />
-      <div className="mx-auto max-w-6xl px-5 py-12">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <article className="rounded-xl border border-line bg-white p-6">
-            <h2 className="text-lg font-semibold">Что увидит директор</h2>
-            <ul className="mt-4 space-y-2 text-[14px] leading-relaxed text-muted">
-              <li>Сыгранные конкурсы: плечо, объём, игроки, победа.</li>
-              <li>Условия лота (Incoterm, страховка, что входит в ставку).</li>
-              <li>Сравнение с полосой «как обычно играют» похожие аукционы.</li>
-              <li>Журнал действий команды и автоотчёты после часа.</li>
-            </ul>
-            <div className="mt-6">
-              <p className="mb-3 text-[13.5px] text-muted">Зарегистрируйтесь и откройте кабинет — режим «Смотреть как» в шапке.</p>
-              <TryCtaButtons />
-            </div>
-          </article>
-          <article className="rounded-xl border border-line bg-white p-6">
-            <h2 className="text-lg font-semibold">Где открыть</h2>
-            <p className="mt-3 text-[14px] leading-relaxed text-muted">
-              Войдите как заказчик или исполнитель → в шапке ЛК «Смотреть как» выберите роль (директор / руководитель /
-              сотрудник). Меню и доступ меняются целиком. Подписка на инструменты — в режиме операционки.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Link to="/app/register?role=importer" className="inline-flex rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
-                Попробовать как заказчик
-              </Link>
-              <Link to="/app/login?role=importer" className="inline-flex rounded-lg border border-line px-4 py-2.5 text-[13px] font-medium">
-                Уже есть аккаунт
-              </Link>
-              <Link to="/articles" className="inline-flex rounded-lg border border-line px-4 py-2.5 text-[13px] font-medium">
-                Статьи
-              </Link>
-            </div>
-          </article>
-        </div>
+      <div className="mx-auto max-w-3xl px-5 py-12">
+        <article className="rounded-2xl border border-line bg-white p-6 md:p-8">
+          <h2 className="text-lg font-semibold">Как открыть</h2>
+          <ol className="mt-4 list-decimal space-y-2 pl-5 text-[14.5px] leading-relaxed text-muted">
+            <li>Зарегистрируйтесь или войдите как заказчик / исполнитель.</li>
+            <li>В шапке кабинета — «Смотреть как» → Директор.</li>
+            <li>Меню сменится на сводку, отчёты, журнал и команду.</li>
+          </ol>
+          <p className="mt-4 text-[14px] text-muted">
+            Письма с итогами — опция внутри кабинета, не отдельный вход с главной.
+          </p>
+          <div className="mt-6">
+            <TryCtaButtons />
+          </div>
+          <Link to="/app/login" className="mt-4 inline-block text-[13px] font-semibold text-brand underline">
+            Уже есть аккаунт — войти
+          </Link>
+        </article>
       </div>
       <PageLeadCta variant="try" />
     </main>

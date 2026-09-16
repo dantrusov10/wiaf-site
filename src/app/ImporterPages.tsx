@@ -14,6 +14,8 @@ import {
   statusRu,
   uniqueBidders,
   weekLabelFromIso,
+  winnerId,
+  runnerUpId,
   type AppLot,
 } from './engine'
 import { Bars, Stat } from './charts'
@@ -95,15 +97,20 @@ export function ImporterHome() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      {!user?.directorEmail && !user?.directorPrefs?.email ? (
-        <div className="rounded-xl border border-warn/30 bg-white px-4 py-3">
-          <p className="text-[14px] font-semibold">Почта директора пустая</p>
+      {current.length + held.length === 0 ? (
+        <div className="rounded-xl border border-brand/30 bg-brand/5 px-4 py-3">
+          <p className="text-[14px] font-semibold">Онбординг заказчика</p>
           <p className="mt-1 text-[13px] text-muted">
-            Итоги часов не уйдут собственнику. Настройте автоотчёты в кабинете директора.
+            1) Выложите слот (можно с префиллом гида). 2) Позовите троих знакомых экспедиторов. 3) Час считается состоявшимся при ≥2 ставках.
           </p>
-          <Link to="/app/importer/director/reports" className="mt-2 inline-block text-[13px] font-semibold text-brand underline">
-            Указать почту и автоотправку
-          </Link>
+          <div className="mt-2 flex flex-wrap gap-3">
+            <Link to="/app/importer/create?guide=1" className="text-[13px] font-semibold text-brand underline">
+              Форма с префиллом
+            </Link>
+            <Link to="/guide" className="text-[13px] font-semibold underline">
+              Гид 10 мин
+            </Link>
+          </div>
         </div>
       ) : null}
 
@@ -192,40 +199,68 @@ export function ImporterCreate() {
 
   useEffect(() => {
     const from = params.get('from')
-    if (!from) return
-    const src = lots.find((l) => l.id === from)
-    if (!src) return
-    setForm({
-      title: src.title,
-      country: src.country,
-      from: src.from,
-      to: src.to,
-      destAddress: src.destAddress,
-      cargo: src.cargo,
-      hs: src.hs,
-      kg: String(src.kg),
-      cbm: String(src.cbm),
-      places: String(src.places),
-      mode: src.mode,
-      container: src.container,
-      insurance: src.insurance,
-      customs: src.customs,
-      incoterm: src.incoterm,
-      currency: src.currency,
-      cargoValue: src.cargoValue ? String(src.cargoValue) : '',
-      packing: src.packing,
-      danger: src.danger,
-      ready: src.ready || todayDd(),
-      exportDecl: src.exportDecl,
-      shipperName: src.shipperName,
-      shipperAddress: src.shipperAddress,
-      comment: src.comment || 'нет',
-      date: isoToDd(src.startIso),
-      time: isoToHm(src.startIso),
-      maxBidUsd: String(src.maxBidUsd || 8000),
-      bidStepUsd: String(src.bidStepUsd ?? 1),
-      durationMin: String(src.durationMin ?? 60),
-    })
+    if (from) {
+      const src = lots.find((l) => l.id === from)
+      if (!src) return
+      setForm({
+        title: src.title,
+        country: src.country,
+        from: src.from,
+        to: src.to,
+        destAddress: src.destAddress,
+        cargo: src.cargo,
+        hs: src.hs,
+        kg: String(src.kg),
+        cbm: String(src.cbm),
+        places: String(src.places),
+        mode: src.mode,
+        container: src.container,
+        insurance: src.insurance,
+        customs: src.customs,
+        incoterm: src.incoterm,
+        currency: src.currency,
+        cargoValue: src.cargoValue ? String(src.cargoValue) : '',
+        packing: src.packing,
+        danger: src.danger,
+        ready: src.ready || todayDd(),
+        exportDecl: src.exportDecl,
+        shipperName: src.shipperName,
+        shipperAddress: src.shipperAddress,
+        comment: src.comment || 'нет',
+        date: isoToDd(src.startIso),
+        time: isoToHm(src.startIso),
+        maxBidUsd: String(src.maxBidUsd || 8000),
+        bidStepUsd: String(src.bidStepUsd ?? 1),
+        durationMin: String(src.durationMin ?? 60),
+      })
+      return
+    }
+    if (params.get('guide') === '1') {
+      setForm((f) => ({
+        ...f,
+        title: 'Гуанчжоу → Москва · трикотаж',
+        country: 'Китай',
+        from: 'Гуанчжоу',
+        to: 'Москва',
+        destAddress: 'Химки',
+        cargo: 'Трикотаж',
+        hs: '611020',
+        kg: '15000',
+        cbm: '28',
+        places: '40',
+        mode: 'Наземный',
+        container: 'Сборный',
+        incoterm: 'EXW',
+        cargoValue: '48000',
+        shipperName: 'Фабрика (демо из гида)',
+        shipperAddress: 'Guangzhou, demo',
+        maxBidUsd: '4500',
+        ready: todayDd(),
+        date: plusDays(todayDd(), 3),
+        time: '13:00',
+      }))
+      setStep(0)
+    }
   }, [params, lots])
 
   const included = useMemo(() => includedChecks.map((c) => c.label), [])
@@ -1032,10 +1067,11 @@ export function ImporterLot() {
   const { id } = useParams()
   const navigate = useNavigate()
   const now = useNow(1000)
-  const { user, lots, startNow, finishNow, archiveLot, newSlot, removeLot } = useSession()
+  const { user, lots, users, startNow, finishNow, archiveLot, newSlot, removeLot } = useSession()
   const [date, setDate] = useState(plusDays(todayDd(), 3))
   const [time, setTime] = useState('13:00')
   const [msg, setMsg] = useState<string | null>(null)
+  const [secondOpened, setSecondOpened] = useState(false)
   const lot = lots.find((l) => l.id === id && l.ownerId === user?.id)
 
   if (!lot) {
@@ -1044,6 +1080,11 @@ export function ImporterLot() {
 
   const st = lotStatus(lot, now)
   const win = bestBid(lot.bids)
+  const winUid = winnerId(lot.bids)
+  const runnerUid = runnerUpId(lot.bids)
+  const winner = winUid ? users.find((u) => u.id === winUid) : undefined
+  const runner = runnerUid ? users.find((u) => u.id === runnerUid) : undefined
+  const runnerBid = runnerUid ? Math.min(...lot.bids.filter((b) => b.userId === runnerUid).map((b) => b.amount)) : undefined
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
@@ -1080,6 +1121,79 @@ export function ImporterLot() {
           </dd>
         </div>
       </dl>
+
+      {st === 'held' && winner ? (
+        <div className="rounded-xl border border-brand/30 bg-brand/5 p-5">
+          <p className="font-mono text-[10px] uppercase tracking-wide text-brand">После часа · победитель</p>
+          <h2 className="mt-1 text-lg font-semibold">Контакты для договора</h2>
+          <p className="mt-2 text-[14px] text-muted">
+            Победа ${win !== undefined ? ruInt.format(win) : '—'} · комиссия победителя 1%, не более 5 000 ₽. Договор стороны пишут сами.
+          </p>
+          <dl className="mt-4 grid gap-2 text-[14px] sm:grid-cols-2">
+            <div>
+              <dt className="text-mist">Компания</dt>
+              <dd className="font-semibold">{winner.company}</dd>
+            </div>
+            <div>
+              <dt className="text-mist">ИНН</dt>
+              <dd className="font-mono">{winner.inn}</dd>
+            </div>
+            <div>
+              <dt className="text-mist">Почта</dt>
+              <dd>
+                <a className="underline" href={`mailto:${winner.email}`}>
+                  {winner.email}
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-mist">Телефон</dt>
+              <dd>
+                <a className="underline" href={`tel:${winner.phone}`}>
+                  {winner.phone}
+                </a>
+              </dd>
+            </div>
+          </dl>
+          {runner && !secondOpened ? (
+            <div className="mt-4 border-t border-line/60 pt-4">
+              <p className="text-[13px] text-muted">
+                Если победитель уклонился — откройте второго номера (ставка{' '}
+                {runnerBid !== undefined ? `$${ruInt.format(runnerBid)}` : '—'}). Не «выберите глазами».
+              </p>
+              <button
+                type="button"
+                className="mt-2 rounded-lg border border-line bg-white px-3 py-2 text-[13px] font-semibold"
+                onClick={() => setSecondOpened(true)}
+              >
+                Открыть второго номера
+              </button>
+            </div>
+          ) : null}
+          {runner && secondOpened ? (
+            <div className="mt-4 rounded-lg border border-line bg-white p-4">
+              <p className="font-mono text-[10px] uppercase text-mist">Второй номер</p>
+              <p className="mt-1 font-semibold">{runner.company}</p>
+              <p className="mt-1 font-mono text-[13px]">
+                {runner.inn} · {runner.email} · {runner.phone}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {st === 'failed' ? (
+        <div className="rounded-xl border border-line bg-white p-5">
+          <p className="font-semibold">Час не состоялся</p>
+          <p className="mt-1 text-[13.5px] text-muted">
+            Меньше двух исполнителей со ставками. Позовите «своих троих» и поставьте новый слот — плотность важнее холодных звонков.
+          </p>
+          <Link to="/guide" className="mt-3 inline-block text-[13px] font-semibold text-brand underline">
+            Гид: как собрать час
+          </Link>
+        </div>
+      ) : null}
+
       <div className="rounded-xl border border-line bg-white p-5">
         <p className="font-semibold">Ставки (слепые)</p>
         {lot.bids.length ? (

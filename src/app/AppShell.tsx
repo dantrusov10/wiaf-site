@@ -93,6 +93,7 @@ function forwarderOps(): Group[] {
     {
       title: 'Сделки',
       items: [
+        { to: '/app/forwarder/history', label: 'История', icon: Trophy },
         { to: '/app/forwarder/won', label: 'Выигранные', icon: Trophy },
         { to: '/app/forwarder/lost', label: 'Проигранные', icon: Archive },
         { to: '/app/forwarder/archive', label: 'Архив', icon: Archive },
@@ -112,7 +113,6 @@ function directorMenu(role: Role): Group[] {
         { to: `${base}/reports`, label: 'Отчёты', icon: Mail },
         { to: `${base}/activity`, label: 'Журнал', icon: ScrollText },
         { to: `${base}/team`, label: 'Команда', icon: Users },
-        { to: `${base}/articles`, label: 'Статьи', icon: BookOpen },
         { to: `${base}/rates`, label: 'Курсы ЦБ', icon: LineChart },
       ],
     },

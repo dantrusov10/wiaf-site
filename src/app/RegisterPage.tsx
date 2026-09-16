@@ -26,7 +26,14 @@ export function RegisterPage() {
   })
 
   if (user) {
-    return <Navigate to={user.role === 'importer' ? '/app/importer' : '/app/forwarder'} replace />
+    const next = params.get('next')?.trim()
+    const dest =
+      next?.startsWith('/app/')
+        ? next
+        : user.role === 'importer'
+          ? '/app/importer'
+          : '/app/forwarder'
+    return <Navigate to={dest} replace />
   }
 
   const set = (k: keyof typeof form, v: string) => {
@@ -81,6 +88,13 @@ export function RegisterPage() {
     })
     if (fail) {
       setErr(fail)
+      return
+    }
+    const next = params.get('next')?.trim()
+    const guide = params.get('guide')
+    if (next?.startsWith('/app/')) {
+      const sep = next.includes('?') ? '&' : '?'
+      navigate(guide === '1' && !next.includes('guide=') ? `${next}${sep}guide=1` : next)
       return
     }
     navigate(role === 'importer' ? '/app/importer' : '/app/forwarder')

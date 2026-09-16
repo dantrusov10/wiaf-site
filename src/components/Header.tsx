@@ -50,17 +50,14 @@ export function Header() {
             {phoneDisplay}
           </a>
           <Link to="/guide" className="inline-flex h-9 items-center rounded-lg px-3 text-[13px] font-medium text-muted hover:text-ink">
-            Гид 10 мин
-          </Link>
-          <Link to="/contacts" className="inline-flex h-9 items-center rounded-lg border border-line px-3.5 text-[13px] font-medium hover:border-brand hover:text-brand">
-            Задать вопрос
+            Гид
           </Link>
           <Magnetic>
             <Link
-              to="/app/login?role=importer"
+              to="/app/register?role=importer&next=/app/importer/create&guide=1"
               className="lift-btn inline-flex h-9 items-center rounded-lg bg-brand px-3.5 text-[13px] font-semibold text-white hover:bg-navy-2"
             >
-              Выложить груз
+              Попробовать
             </Link>
           </Magnetic>
         </div>
@@ -89,22 +86,19 @@ export function Header() {
             {phoneDisplay}
           </a>
           <div className="mt-4 flex flex-col gap-2">
-            <Link to="/guide" className="rounded-lg border border-line px-4 py-2.5 text-center text-[14px]" onClick={() => setOpen(false)}>
-              Гид за 10 минут
-            </Link>
             <Link
-              to="/app/login?role=importer"
+              to="/app/register?role=importer&next=/app/importer/create&guide=1"
               className="rounded-lg bg-brand px-4 py-2.5 text-center text-[14px] font-semibold text-white"
               onClick={() => setOpen(false)}
             >
-              Выложить груз
+              Попробовать как заказчик
             </Link>
             <Link
-              to="/app/login?role=forwarder"
+              to="/app/register?role=forwarder&next=/app/forwarder/balance"
               className="rounded-lg border border-line px-4 py-2.5 text-center text-[14px]"
               onClick={() => setOpen(false)}
             >
-              Я перевозчик
+              Попробовать как исполнитель
             </Link>
           </div>
         </div>

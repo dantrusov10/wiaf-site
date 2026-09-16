@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   articleCategories,
   articles,
@@ -15,7 +15,15 @@ import { InlineTryMagnet, PageLeadCta } from '../components/LeadMagnet'
 import { ArticleComments } from '../components/ArticleComments'
 
 export function ArticlesPage() {
-  const [cat, setCat] = useState<ArticleCategory>('Все')
+  const [params] = useSearchParams()
+  const catParam = params.get('cat')
+  const initial = (articleCategories.includes(catParam as ArticleCategory) ? catParam : 'Все') as ArticleCategory
+  const [cat, setCat] = useState<ArticleCategory>(initial)
+
+  useEffect(() => {
+    if (articleCategories.includes(catParam as ArticleCategory)) setCat(catParam as ArticleCategory)
+  }, [catParam])
+
   const featured = articles.find((a) => a.featured) ?? articles[0]
   const list = useMemo(
     () => articles.filter((a) => (cat === 'Все' ? true : a.category === cat) && a.slug !== featured.slug),
@@ -36,7 +44,7 @@ export function ArticlesPage() {
           <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Блог wIaF</h1>
             <p className="mt-2 max-w-2xl text-[15px] text-muted">
-              Релизы модели торгов, деньги площадки, кресло директора — в формате экспертного блога.
+              Кейсы под NDA, деньги площадки и правила часа — без мета-сравнений.
             </p>
           </div>
           <ThemeIcon id="tips" size={88} />
@@ -125,6 +133,7 @@ export function ArticlePage() {
       </main>
     )
   }
+  const mid = Math.min(1, one.body.length - 1)
   return (
     <main className="bg-paper">
       <div className="mx-auto max-w-3xl px-5 py-10">
@@ -153,11 +162,10 @@ export function ArticlePage() {
           {one.body.map((p, i) => (
             <div key={p.slice(0, 32)}>
               <p>{p}</p>
-              {i === 1 ? <InlineTryMagnet /> : null}
+              {i === mid ? <InlineTryMagnet /> : null}
             </div>
           ))}
         </div>
-        <InlineTryMagnet />
         <div className="mt-10 flex flex-wrap gap-2">
           {one.tags.map((t) => (
             <span key={t} className="rounded-full bg-fog px-3 py-1 text-[12px] text-muted">

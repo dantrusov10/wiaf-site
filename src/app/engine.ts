@@ -189,6 +189,16 @@ export function winnerId(bids: Bid[]) {
   return hit?.userId
 }
 
+/** Второй номер: лучшая ставка среди остальных после победителя. */
+export function runnerUpId(bids: Bid[]) {
+  const win = winnerId(bids)
+  if (!win) return undefined
+  const rest = bids.filter((b) => b.userId !== win)
+  if (!rest.length) return undefined
+  const min = Math.min(...rest.map((b) => b.amount))
+  return [...rest].filter((b) => b.amount === min).sort((a, b) => a.at.localeCompare(b.at))[0]?.userId
+}
+
 /** 1% от ставки в USD → ₽, потолок 5 000 ₽. */
 export function commissionRub(winUsd: number) {
   const raw = Math.max(0, Math.round(winUsd * 0.01 * RUB_PER_USD))

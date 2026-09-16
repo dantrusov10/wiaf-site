@@ -173,12 +173,18 @@ export function GuidePage() {
                   Дальше
                 </button>
               ) : (
-                <Link to="/app/importer/create" className="rounded-lg bg-brand px-3 py-2 text-[13px] font-semibold text-white">
-                  К форме лота
+                <Link
+                  to="/app/register?role=importer&next=/app/importer/create&guide=1"
+                  className="rounded-lg bg-brand px-3 py-2 text-[13px] font-semibold text-white"
+                >
+                  Зарегистрироваться и выложить
                 </Link>
               )}
-              <Link to="/help/pervyi-lot" className="rounded-lg px-3 py-2 text-[13px] underline">
-                Инструкция в базе
+              <Link
+                to="/app/importer/create?guide=1"
+                className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold"
+              >
+                Уже вошёл — форма с префиллом
               </Link>
             </div>
           </article>
@@ -192,10 +198,10 @@ export function GuidePage() {
               </Link>
             </div>
             <div className="rounded-lg border border-line bg-white p-4">
-              <p className="text-[13px] font-semibold">Директору</p>
-              <p className="mt-1 text-[13px] text-muted">Почта отдельно от логиста. Ставка часа — не обязанность закупить.</p>
+              <p className="text-[13px] font-semibold">Директор — в кабинете</p>
+              <p className="mt-1 text-[13px] text-muted">После входа: «Смотреть как» → Директор. Не отдельная регистрация.</p>
               <Link to="/director" className="mt-2 inline-block text-[13px] text-brand hover:underline">
-                Кресло директора
+                Как открыть
               </Link>
             </div>
           </aside>

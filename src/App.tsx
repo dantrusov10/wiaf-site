@@ -22,6 +22,7 @@ import {
   ForwarderTurkey,
   ForwarderVietnam,
   ForwarderWon,
+  ForwarderHistory,
 } from './app/ForwarderPages'
 import {
   ImporterArchive,
@@ -155,6 +156,7 @@ const router = createBrowserRouter(
         { path: 'vietnam', element: <ForwarderVietnam /> },
         { path: 'india', element: <ForwarderIndia /> },
         { path: 'lots/:id', element: <ForwarderLot /> },
+        { path: 'history', element: <ForwarderHistory /> },
         { path: 'won', element: <ForwarderWon /> },
         { path: 'lost', element: <ForwarderLost /> },
         { path: 'archive', element: <ForwarderArchive /> },

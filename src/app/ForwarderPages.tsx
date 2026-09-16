@@ -270,7 +270,7 @@ export function ForwarderHome() {
           labels={forwarderWeek.map((w) => w.w)}
           aLabel="ставки"
           bLabel="победы"
-          onBarClick={(_i, label) => navigate(`/app/forwarder/won?week=${encodeURIComponent(label)}`)}
+          onBarClick={(_i, label) => navigate(`/app/forwarder/history?week=${encodeURIComponent(label)}`)}
         />
       </Panel>
 
@@ -289,34 +289,36 @@ function DealTable({ items, initialFilters }: { items: DealRow[]; initialFilters
   }
 
   const columns: Col<DealRow>[] = [
-    { key: 'code', label: 'Код', get: (d) => d.code, className: 'font-mono' },
-    { key: 'week', label: 'Неделя', get: (d) => d.week, className: 'font-mono' },
-    { key: 'country', label: 'Страна', get: (d) => d.country },
-    { key: 'route', label: 'Маршрут', get: (d) => `${d.from} → ${d.to}` },
-    { key: 'cargo', label: 'Груз', get: (d) => d.cargo },
-    { key: 'hs', label: 'ТН ВЭД', get: (d) => d.hs, className: 'font-mono' },
-    { key: 'cbm', label: 'м³', get: (d) => d.cbm, sortType: 'number', cell: (d) => <span className="font-mono">{ruDec.format(d.cbm)}</span> },
-    { key: 'kg', label: 'кг', get: (d) => d.kg, sortType: 'number', cell: (d) => <span className="font-mono">{ruInt.format(d.kg)}</span> },
-    { key: 'mode', label: 'Транспорт', get: (d) => d.mode },
-    { key: 'container', label: 'Загрузка', get: (d) => d.container },
-    { key: 'incoterm', label: 'Базис', get: (d) => d.incoterm, className: 'font-mono' },
-    { key: 'insurance', label: 'Страховка', get: (d) => d.insurance },
-    { key: 'customs', label: 'ТО', get: (d) => d.customs },
+    { key: 'code', label: 'Код', get: (d) => d.code, className: 'font-mono', priority: 'high' },
+    { key: 'week', label: 'Неделя', get: (d) => d.week, className: 'font-mono', priority: 'high' },
+    { key: 'country', label: 'Страна', get: (d) => d.country, priority: 'high' },
+    { key: 'route', label: 'Маршрут', get: (d) => `${d.from} → ${d.to}`, priority: 'high' },
+    { key: 'cargo', label: 'Груз', get: (d) => d.cargo, priority: 'low' },
+    { key: 'hs', label: 'ТН ВЭД', get: (d) => d.hs, className: 'font-mono', priority: 'low' },
+    { key: 'cbm', label: 'м³', get: (d) => d.cbm, sortType: 'number', cell: (d) => <span className="font-mono">{ruDec.format(d.cbm)}</span>, priority: 'low' },
+    { key: 'kg', label: 'кг', get: (d) => d.kg, sortType: 'number', cell: (d) => <span className="font-mono">{ruInt.format(d.kg)}</span>, priority: 'low' },
+    { key: 'mode', label: 'Транспорт', get: (d) => d.mode, priority: 'low' },
+    { key: 'container', label: 'Загрузка', get: (d) => d.container, priority: 'low' },
+    { key: 'incoterm', label: 'Базис', get: (d) => d.incoterm, className: 'font-mono', priority: 'low' },
+    { key: 'insurance', label: 'Страховка', get: (d) => d.insurance, priority: 'low' },
+    { key: 'customs', label: 'ТО', get: (d) => d.customs, priority: 'low' },
     {
       key: 'value',
       label: 'Груз $',
       get: (d) => d.cargoValue,
       sortType: 'number',
       cell: (d) => <span className="font-mono">{d.cargoValue ? ruInt.format(d.cargoValue) : '0'}</span>,
+      priority: 'low',
     },
-    { key: 'my', label: 'Моя $', get: (d) => d.myBid, sortType: 'number', cell: (d) => <span className="font-mono">${ruInt.format(d.myBid)}</span> },
-    { key: 'win', label: 'Победа $', get: (d) => d.winBid, sortType: 'number', cell: (d) => <span className="font-mono">${ruInt.format(d.winBid)}</span> },
-    { key: 'n', label: 'n', get: (d) => d.bidders, sortType: 'number' },
-    { key: 'slot', label: 'Слот', get: (d) => d.slot },
+    { key: 'my', label: 'Моя $', get: (d) => d.myBid, sortType: 'number', cell: (d) => <span className="font-mono">${ruInt.format(d.myBid)}</span>, priority: 'high' },
+    { key: 'win', label: 'Победа $', get: (d) => d.winBid, sortType: 'number', cell: (d) => <span className="font-mono">${ruInt.format(d.winBid)}</span>, priority: 'high' },
+    { key: 'n', label: 'n', get: (d) => d.bidders, sortType: 'number', priority: 'low' },
+    { key: 'slot', label: 'Слот', get: (d) => d.slot, priority: 'low' },
     {
       key: 'status',
       label: 'Итог',
       get: (d) => (d.status === 'won' ? 'выиграли' : d.status === 'lost' ? 'ниже' : 'архив'),
+      priority: 'high',
     },
   ]
 
@@ -510,6 +512,19 @@ export function ForwarderWon() {
   )
 }
 
+export function ForwarderHistory() {
+  const { user, lots } = useSession()
+  const now = useNow(2000)
+  const deals = user ? dealsOf(user.id, lots, now) : []
+  return (
+    <DealList
+      title="История ставок"
+      hint="Выигранные и проигранные вместе. Drill-down с графика недель подставляет фильтр."
+      items={deals.filter((d) => d.status === 'won' || d.status === 'lost')}
+    />
+  )
+}
+
 export function ForwarderLost() {
   const { user, lots } = useSession()
   const now = useNow(2000)
@@ -551,6 +566,18 @@ export function ForwarderBalance() {
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <h1 className="text-2xl font-semibold">Счёт</h1>
+      {balance < 1000 ? (
+        <div className="rounded-xl border border-brand/30 bg-brand/5 px-4 py-3">
+          <p className="text-[14px] font-semibold">Онбординг исполнителя</p>
+          <p className="mt-1 text-[13px] text-muted">
+            1) Пополните от 1 000 ₽ (демо-кнопки ниже). 2) Откройте ленту Китая. 3) Ставьте — на балансе должен быть холд:
+            1% от ставки, не более 5 000 ₽.
+          </p>
+          <Link to="/app/forwarder/china" className="mt-2 inline-block text-[13px] font-semibold text-brand underline">
+            К ленте после пополнения →
+          </Link>
+        </div>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat
           label="Доступно"

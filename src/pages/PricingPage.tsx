@@ -127,8 +127,8 @@ export function PricingPage() {
     <main>
       <PageHero
         kicker="Тарифы"
-        title="Free — только аукцион. Инструменты — в подписке"
-        dek="На бесплатном ярусе торгуете слотами. Журнал, калькуляторы, тарифы и КП открываются с «Закупки» / «Стола»."
+        title="Аукцион бесплатен. Инструменты — отдельно"
+        dek="Слот и ставка не запираются подпиской. Комиссия с победителя — 1%, не более 5 000 ₽. «Закупка» / «Стол» — журнал и подсказки между часами."
       />
 
       <div className="mx-auto max-w-6xl space-y-16 px-5 py-10">
@@ -154,8 +154,8 @@ export function PricingPage() {
                 Free — только слот. Закупка — все инструменты. Pro — команда и проверки поставщиков.
               </p>
             </div>
-            <Link to="/app/login?role=importer" className="text-[13px] font-semibold underline">
-              Кабинет заказчика
+            <Link to="/app/register?role=importer" className="text-[13px] font-semibold underline">
+              Попробовать как заказчик
             </Link>
           </div>
           <div className="mt-6 grid gap-4 lg:grid-cols-3">

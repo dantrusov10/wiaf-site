@@ -13,6 +13,8 @@ export type Col<T> = {
   sortType?: 'string' | 'number'
   /** false = не показывать в раскрытой панели фильтров */
   filterable?: boolean
+  /** low = скрыть колонку на узком экране (деталь — в карточке) */
+  priority?: 'high' | 'low'
 }
 
 type Props<T> = {
@@ -239,7 +241,10 @@ export function DataTable<T>({
                 {columns.map((c) => {
                   const active = sortKey === c.key
                   return (
-                    <th key={c.key} className={`py-2.5 pl-3 pr-2 ${c.className ?? ''}`}>
+                    <th
+                      key={c.key}
+                      className={`py-2.5 pl-3 pr-2 ${c.className ?? ''} ${c.priority === 'low' ? 'hidden md:table-cell' : ''}`}
+                    >
                       <button type="button" className="inline-flex items-center gap-1 hover:text-ink" onClick={() => toggleSort(c.key)}>
                         {c.label}
                         {active ? (
@@ -278,7 +283,10 @@ export function DataTable<T>({
                       }}
                     >
                       {columns.map((c) => (
-                        <td key={c.key} className={`py-2.5 pl-3 pr-2 ${c.className ?? ''}`}>
+                        <td
+                          key={c.key}
+                          className={`py-2.5 pl-3 pr-2 ${c.className ?? ''} ${c.priority === 'low' ? 'hidden md:table-cell' : ''}`}
+                        >
                           {c.cell ? c.cell(row) : String(c.get(row) ?? '—')}
                         </td>
                       ))}

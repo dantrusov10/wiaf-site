@@ -6,10 +6,9 @@ import { FooterLeadStrip } from './LeadMagnet'
 const links = [
   { to: '/auctions', label: 'Аукционы' },
   { to: '/articles', label: 'Блог' },
-  { to: '/rates', label: 'Курсы ЦБ' },
-  { to: '/director', label: 'Директору' },
   { to: '/pricing', label: 'Тарифы' },
   { to: '/guide', label: 'Гид' },
+  { to: '/rates', label: 'Курсы ЦБ' },
   { to: '/rules', label: 'Правила' },
   { to: '/privacy', label: 'Конфиденциальность' },
 ]

@@ -1,6 +1,7 @@
 ﻿import { Link } from 'react-router-dom'
 import { ThemeIcon, type ThemeIconId } from './ThemeIcon'
 import { ShineCard } from './Motion'
+import { moneyCopy } from '../content/money'
 
 export const howSteps: { n: string; title: string; text: string; icon: ThemeIconId }[] = [
   {
@@ -18,7 +19,7 @@ export const howSteps: { n: string; title: string; text: string; icon: ThemeIcon
   {
     n: '3',
     title: 'Победитель получает контакты',
-    text: 'Наименьшая ставка автоматом. Комиссия 1% с победителя, не более 5к. Импортёру бесплатно.',
+    text: `Наименьшая ставка автоматом. ${moneyCopy.commissionShort}. Импортёру бесплатно.`,
     icon: 'deal',
   },
 ]
