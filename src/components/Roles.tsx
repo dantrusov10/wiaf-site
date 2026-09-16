@@ -101,7 +101,7 @@ function RoleCard({ data, accent }: { data: typeof importer; accent?: boolean })
     <article className={`lift-card flex flex-col rounded-lg border p-5 ${accent ? 'border-brand/30 bg-paper' : 'border-line bg-paper'}`}>
       <div className="flex items-start justify-between gap-3">
         <Tag tone={accent ? 'brand' : 'ink'}>{data.tag}</Tag>
-        <ThemeIcon id={data.icon} size={72} />
+        <ThemeIcon id={data.icon} size={88} />
       </div>
       <h3 className="mt-3 text-lg font-semibold">{data.title}</h3>
       <p className="mt-2 text-[18px] font-semibold text-brand">{data.price}</p>
@@ -129,7 +129,7 @@ function RoleCard({ data, accent }: { data: typeof importer; accent?: boolean })
 function TrustChip({ id, title, text }: { id: ThemeIconId; title: string; text: string }) {
   return (
     <li className="lift-card flex gap-3 rounded-lg border border-line bg-white px-4 py-3">
-      <ThemeIcon id={id} size={56} className="shrink-0" />
+      <ThemeIcon id={id} size={64} className="shrink-0" />
       <div>
         <p className="text-[13.5px] font-semibold">{title}</p>
         <p className="text-[12.5px] text-muted">{text}</p>

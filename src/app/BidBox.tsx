@@ -50,6 +50,9 @@ export function BidBox({ lot, compact }: { lot: AppLot; compact?: boolean }) {
             country: lot.country,
             cargo: lot.cargo,
             playersOnLot: uniqueBidders(lot.bids),
+            insurance: lot.insurance,
+            customs: lot.customs,
+            incoterm: lot.incoterm,
           })
         : [],
     [smart, bidUsd, lot, last, step, balance, needHold, feePreview, left],

@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom'
 import { formatWhen, loadLabel, modeLabel, ruDec, ruInt, type Auction } from '../data'
 import { useSlotClock } from '../hooks'
-import { isOpenLot, lotStatus, toBoard } from '../app/engine'
+import { countryKey, isOpenLot, lotStatus, toBoard } from '../app/engine'
 import { useSession } from '../app/session'
 import { HsChip, IncotermChip, ModeIcon, StatusChip } from './Chips'
 
@@ -51,18 +51,29 @@ function AuctionRow({ lot, featured }: { lot: Auction; featured?: boolean }) {
   )
 }
 
-export function AuctionBoard() {
+export type AuctionLane = 'all' | 'china' | 'turkey' | 'vietnam' | 'india' | 'export' | 'other'
+
+export function AuctionBoard({
+  lane = 'all',
+  limit = 8,
+}: {
+  lane?: AuctionLane
+  limit?: number
+}) {
   const { lots } = useSession()
-  const open = lots.filter((l) => isOpenLot(l)).sort((a, b) => a.startIso.localeCompare(b.startIso))
+  const openAll = lots.filter((l) => isOpenLot(l)).sort((a, b) => a.startIso.localeCompare(b.startIso))
+  const open = lane === 'all' ? openAll : openAll.filter((l) => countryKey(l.country) === lane)
   const live = open.filter((l) => lotStatus(l) === 'live').length
-  const rows = open.slice(0, 6).map(toBoard)
+  const rows = open.slice(0, limit).map(toBoard)
 
   return (
-    <div id="board">
+    <div id="board" className="overflow-hidden rounded-xl border border-line bg-white">
       <div className="flex items-center justify-between border-b border-line bg-fog px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="live-dot relative size-2 rounded-full bg-ok" />
-          <p className="text-[13px] font-semibold tracking-wide">Живые аукционы</p>
+          <p className="text-[13px] font-semibold tracking-wide">
+            {lane === 'all' ? 'Живые аукционы' : `Открытые · ${laneLabel(lane)}`}
+          </p>
         </div>
         <p className="clock font-mono text-[12px] text-muted">
           {live} идёт · {open.length} в ленте
@@ -73,7 +84,7 @@ export function AuctionBoard() {
           rows.map((lot, i) => <AuctionRow key={lot.id} lot={lot} featured={i === 0} />)
         ) : (
           <p className="px-2 py-6 text-center text-[13px] text-muted">
-            Сейчас нет открытых слотов.{' '}
+            Нет открытых слотов по этой стране.{' '}
             <Link to="/app/login?role=importer" className="underline">
               Выложить груз
             </Link>
@@ -87,3 +98,11 @@ export function AuctionBoard() {
   )
 }
 
+function laneLabel(lane: AuctionLane) {
+  if (lane === 'china') return 'Китай'
+  if (lane === 'turkey') return 'Турция'
+  if (lane === 'vietnam') return 'Вьетнам'
+  if (lane === 'india') return 'Индия'
+  if (lane === 'export') return 'Экспорт'
+  return 'Другое'
+}

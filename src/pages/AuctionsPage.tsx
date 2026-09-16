@@ -52,7 +52,7 @@ export function AuctionsPage() {
               </button>
             ))}
           </div>
-          <AuctionBoard />
+          <AuctionBoard lane={lane} />
           <div className="overflow-x-auto rounded-xl border border-line bg-white">
             <table className="w-full min-w-[640px] text-left text-[13px]">
               <thead className="border-b border-line bg-fog/50 font-mono text-[10px] uppercase text-mist">

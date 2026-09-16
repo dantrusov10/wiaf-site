@@ -126,7 +126,7 @@ export function HomePage() {
                 className="overflow-hidden rounded-2xl border border-line bg-paper transition hover:border-brand/40"
               >
                 <div className="flex items-center justify-center bg-[#f4f5f7] py-6">
-                  <ThemeIcon id={a.icon} size={80} />
+                  <ThemeIcon id={a.icon} size={104} />
                 </div>
                 <div className="p-4">
                   <p className="font-mono text-[10px] text-mist">{a.category}</p>

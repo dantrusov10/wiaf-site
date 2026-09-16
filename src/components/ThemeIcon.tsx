@@ -7,7 +7,7 @@ export type { ThemeIconId }
 /** Нативная SVG-иконка без подложки-квадрата. */
 export function ThemeIcon({
   id,
-  size = 88,
+  size = 112,
   className = '',
   alt = '',
 }: {
@@ -33,7 +33,7 @@ export function ThemeTile({
   id,
   label,
   to,
-  size = 80,
+  size = 100,
 }: {
   id: ThemeIconId
   label: string
@@ -67,7 +67,7 @@ export function ThemeTileRow({
     <ul className={`grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 ${className}`}>
       {items.map((it) => (
         <li key={it.id + it.label}>
-          <ThemeTile id={it.id} label={it.label} to={it.to} size={104} />
+          <ThemeTile id={it.id} label={it.label} to={it.to} size={120} />
         </li>
       ))}
     </ul>
@@ -103,7 +103,7 @@ export function ArticleCover({
           {meta ? <p className="mt-2 font-mono text-[11px] text-mist">{meta}</p> : null}
           {title && large ? <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink md:text-3xl">{title}</h2> : null}
         </div>
-        <ThemeIcon id={icon} size={large ? 140 : 100} className="shrink-0" />
+        <ThemeIcon id={icon} size={large ? 168 : 120} className="shrink-0" />
       </div>
     </div>
   )

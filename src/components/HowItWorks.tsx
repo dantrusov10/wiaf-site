@@ -41,7 +41,7 @@ export function HowItWorks() {
             <ShineCard key={step.n} className="rounded-xl border border-line bg-white p-5">
               <div className="flex items-start justify-between gap-3">
                 <p className="font-mono text-[12px] text-brand">{step.n}</p>
-                <ThemeIcon id={step.icon} size={72} />
+                <ThemeIcon id={step.icon} size={88} />
               </div>
               <h3 className="mt-2 text-[16px] font-semibold">{step.title}</h3>
               <p className="mt-2 text-[13.5px] leading-relaxed text-muted">{step.text}</p>

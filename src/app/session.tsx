@@ -32,7 +32,7 @@ type Store = {
   directorReports: DirectorReport[]
 }
 
-const KEY = 'wiaf-local-v9'
+const KEY = 'wiaf-local-v10'
 
 function defaultPlan(role: Role, subscribed: boolean): PlanId {
   if (role === 'importer') return subscribed ? 'imp-zakupka' : 'imp-free'
@@ -67,7 +67,7 @@ const empty: Store = {
 
 function read(): Store {
   try {
-    const raw = localStorage.getItem(KEY) ?? localStorage.getItem('wiaf-local-v8')
+    const raw = localStorage.getItem(KEY)
     if (!raw) return structuredClone(empty)
     const parsed = JSON.parse(raw) as Partial<Store>
     return {
