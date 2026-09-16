@@ -1,6 +1,7 @@
 ﻿import { Check, Minus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PageHero } from '../components/PageHero'
+import { PageLeadCta } from '../components/LeadMagnet'
 import {
   auctionMoney,
   forwarderHeroes,
@@ -193,6 +194,7 @@ export function PricingPage() {
           </ul>
         </section>
       </div>
+      <PageLeadCta variant="importer" />
     </main>
   )
 }

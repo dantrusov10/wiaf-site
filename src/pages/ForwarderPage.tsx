@@ -1,5 +1,6 @@
 ﻿import { Link } from 'react-router-dom'
 import { PageHero } from '../components/PageHero'
+import { PageLeadCta } from '../components/LeadMagnet'
 
 export function ForwarderPage() {
   return (
@@ -38,6 +39,7 @@ export function ForwarderPage() {
           </Link>
         </div>
       </div>
+      <PageLeadCta variant="pricing" />
     </main>
   )
 }

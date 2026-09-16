@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PageHero } from '../components/PageHero'
+import { PageLeadCta } from '../components/LeadMagnet'
 
 export function ImporterPage() {
   return (
@@ -35,6 +36,7 @@ export function ImporterPage() {
           </Link>
         </div>
       </div>
+      <PageLeadCta variant="director" />
     </main>
   )
 }

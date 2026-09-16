@@ -11,6 +11,7 @@ import {
 import { ArticleCover, ThemeIcon } from '../components/ThemeIcon'
 import { RatesStrip } from '../components/RatesStrip'
 import { Magnetic } from '../components/Motion'
+import { PageLeadCta } from '../components/LeadMagnet'
 
 export function ArticlesPage() {
   const [cat, setCat] = useState<ArticleCategory>('Все')
@@ -105,6 +106,7 @@ export function ArticlesPage() {
           </div>
         </aside>
       </div>
+      <PageLeadCta variant="director" />
     </main>
   )
 }

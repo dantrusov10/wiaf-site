@@ -59,6 +59,32 @@ export type PlanId =
   | 'fwd-stol'
   | 'fwd-pro'
 
+/** Роль внутри компании (не путать с importer/forwarder). */
+export type OrgRole = 'owner' | 'director' | 'manager' | 'employee'
+
+export type TeamMember = {
+  id: string
+  /** id аккаунта компании (owner) */
+  orgUserId: string
+  name: string
+  email: string
+  orgRole: OrgRole
+  active: boolean
+  createdAt: string
+}
+
+export type ActivityEvent = {
+  id: string
+  orgUserId: string
+  actorId: string
+  actorName: string
+  role: Role
+  action: string
+  detail: string
+  at: string
+  lotId?: string
+}
+
 export type DirectorReportCadence = 'each' | 'weekly' | 'manual'
 
 export type DirectorPrefs = {
@@ -97,6 +123,8 @@ export type User = {
   /** Почта директора / собственника — отдельно от логина логиста. */
   directorEmail?: string
   directorPrefs?: DirectorPrefs
+  /** Роль в оргструктуре компании. Owner — полный доступ к команде и журналу. */
+  orgRole?: OrgRole
   /** Снимок Checko на момент регистрации (если был). */
   checko?: {
     light: string

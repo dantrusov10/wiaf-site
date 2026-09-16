@@ -78,3 +78,117 @@ export function HomeLeadStrip() {
     </section>
   )
 }
+
+/** Компактный лидмагнит внизу страниц сайта. */
+export function PageLeadCta({
+  variant = 'guide',
+}: {
+  variant?: 'guide' | 'director' | 'pricing' | 'forwarder' | 'importer'
+}) {
+  if (variant === 'director') {
+    return (
+      <section className="border-t border-line bg-fog/50">
+        <div className="mx-auto max-w-6xl px-5 py-10">
+          <div className="rounded-2xl border border-line bg-white p-6 md:flex md:items-end md:justify-between md:gap-8">
+            <div className="max-w-xl">
+              <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Лидмагнит</p>
+              <h2 className="mt-1 text-xl font-semibold">Итоги часа на почту директора</h2>
+              <p className="mt-2 text-[14px] text-muted">Без входа в ЛК — вилка после состоявшегося слота.</p>
+            </div>
+            <div className="mt-4 min-w-[280px] flex-1 md:mt-0">
+              <DirectorLeadForm compact />
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+  if (variant === 'pricing') {
+    return (
+      <section className="border-t border-line bg-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-10">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Тарифы</p>
+            <h2 className="mt-1 text-xl font-semibold">Free = торг. Инструменты — в подписке</h2>
+            <p className="mt-1 text-[14px] text-muted">Аукцион не запираем. Журнал, КП и подсказки — с платного яруса.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/pricing" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
+              Смотреть тарифы
+            </Link>
+            <Link to="/app/register?role=importer" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold">
+              Регистрация заказчика
+            </Link>
+          </div>
+        </div>
+      </section>
+    )
+  }
+  if (variant === 'forwarder') {
+    return (
+      <section className="border-t border-line bg-fog/40">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-10">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Исполнителю</p>
+            <h2 className="mt-1 text-xl font-semibold">Стол + маржа + умные подсказки</h2>
+            <p className="mt-1 text-[14px] text-muted">Регистрация бесплатна. Ставки — при балансе от 1 000 ₽.</p>
+          </div>
+          <Link to="/app/register?role=forwarder" className="rounded-lg bg-navy px-4 py-2.5 text-[13px] font-semibold text-white">
+            Стать исполнителем
+          </Link>
+        </div>
+      </section>
+    )
+  }
+  if (variant === 'importer') {
+    return (
+      <section className="border-t border-line bg-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-10">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Заказчику</p>
+            <h2 className="mt-1 text-xl font-semibold">Выложить первый лот бесплатно</h2>
+            <p className="mt-1 text-[14px] text-muted">Час на понижение. Победитель = минимум. Договор — сами.</p>
+          </div>
+          <Link to="/app/register?role=importer" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
+            Создать аккаунт
+          </Link>
+        </div>
+      </section>
+    )
+  }
+  return (
+    <section className="border-t border-line bg-fog/40">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-10">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Гид</p>
+          <h2 className="mt-1 text-xl font-semibold">Не знаете с чего начать?</h2>
+          <p className="mt-1 text-[14px] text-muted">Короткий сценарий первого лота — 10 минут.</p>
+        </div>
+        <Link to="/guide" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
+          Открыть гид
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+export function FooterLeadStrip() {
+  return (
+    <div className="border-t border-white/10 bg-navy-2/40">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-4 text-[13px] text-fog">
+        <span>Письма директору · гид · тарифы Free/Pro</span>
+        <div className="flex flex-wrap gap-3">
+          <Link to="/director" className="underline hover:text-white">
+            Директору
+          </Link>
+          <Link to="/guide" className="underline hover:text-white">
+            Гид
+          </Link>
+          <Link to="/pricing" className="underline hover:text-white">
+            Тарифы
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}

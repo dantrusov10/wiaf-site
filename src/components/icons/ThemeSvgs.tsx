@@ -52,16 +52,25 @@ function Svg({ children, className, title, style }: Props & { children: ReactNod
 export function IconAuction(p: Props) {
   return (
     <Svg {...p}>
+      <defs>
+        <linearGradient id="gAuction" x1="12" y1="34" x2="52" y2="62" gradientUnits="userSpaceOnUse">
+          <stop stopColor={C.fog} />
+          <stop offset="1" stopColor={C.soft} />
+        </linearGradient>
+      </defs>
       <ellipse cx="40" cy="70" rx="26" ry="4" fill={C.line} opacity="0.7" />
-      <rect x="12" y="34" width="40" height="28" rx="4" fill={C.fog} stroke={C.ink} strokeWidth="1.8" />
+      <rect x="12" y="34" width="40" height="28" rx="4" fill="url(#gAuction)" stroke={C.ink} strokeWidth="1.8" />
       <rect x="12" y="34" width="40" height="9" rx="4" fill={C.navy} />
-      <path d="M18 50h28M18 56h20M18 62h14" stroke={C.soft} strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M16 38.5h8M28 38.5h6" stroke={C.brand2} strokeWidth="1.4" strokeLinecap="round" opacity="0.85" />
+      <path d="M18 50h28M18 56h20M18 62h14" stroke={C.mist} strokeWidth="1.6" strokeLinecap="round" />
       <path d="M52 14l10 22H42L52 14z" fill={C.brand} stroke={C.ink} strokeWidth="1.2" strokeLinejoin="round" />
-      <path d="M48 20l4 9h-8l4-9z" fill={C.brand2} opacity="0.85" />
+      <path d="M48 20l4 9h-8l4-9z" fill={C.brand2} opacity="0.9" />
+      <path d="M49 18h6" stroke={C.white} strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
       <path d="M52 36v22" stroke={C.navy} strokeWidth="2.6" strokeLinecap="round" />
       <circle cx="52" cy="60" r="4.5" fill={C.ink} />
       <circle cx="52" cy="60" r="2" fill={C.brand2} />
       <path d="M58 28c6 2 10 8 10 14" stroke={C.mist} strokeWidth="1.4" strokeDasharray="2 3" />
+      <circle cx="68" cy="44" r="2" fill={C.brand} opacity="0.7" />
     </Svg>
   )
 }

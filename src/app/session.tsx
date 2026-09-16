@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import { buildDirectorReportBody } from './directorReport'
+import { seedActivity, seedLedger, seedLots, seedTeam, seedTickets, seedUsers } from './seedStore'
 import {
   bestBid,
   commissionRub,
@@ -9,16 +10,18 @@ import {
   REG_BALANCE_MIN,
   TOPUP_MIN,
   winnerId,
+  type ActivityEvent,
   type AppLot,
   type DirectorPrefs,
   type DirectorReport,
   type Ledger,
+  type OrgRole,
   type PlanId,
   type Role,
+  type TeamMember,
   type Ticket,
   type User,
 } from './engine'
-import { seedLedger, seedLots, seedTickets, seedUsers } from './seedStore'
 
 export type { AppLot, Role, Ticket, User }
 export type Draft = AppLot
@@ -30,9 +33,11 @@ type Store = {
   tickets: Ticket[]
   ledger: Ledger[]
   directorReports: DirectorReport[]
+  team: TeamMember[]
+  activity: ActivityEvent[]
 }
 
-const KEY = 'wiaf-local-v10'
+const KEY = 'wiaf-local-v11'
 
 function defaultPlan(role: Role, subscribed: boolean): PlanId {
   if (role === 'importer') return subscribed ? 'imp-zakupka' : 'imp-free'
@@ -46,6 +51,7 @@ function migrateUser(u: User): User {
     ...u,
     planId,
     subscribed,
+    orgRole: u.orgRole ?? 'owner',
     directorPrefs: u.directorPrefs ?? {
       email: u.directorEmail ?? '',
       enabled: false,
@@ -56,6 +62,27 @@ function migrateUser(u: User): User {
   }
 }
 
+function pushActivity(
+  s: Store,
+  actor: User,
+  action: string,
+  detail: string,
+  lotId?: string,
+): Store {
+  const ev: ActivityEvent = {
+    id: crypto.randomUUID(),
+    orgUserId: actor.id,
+    actorId: actor.id,
+    actorName: actor.responsible || actor.company,
+    role: actor.role,
+    action,
+    detail,
+    at: new Date().toISOString(),
+    lotId,
+  }
+  return { ...s, activity: [ev, ...s.activity].slice(0, 400) }
+}
+
 const empty: Store = {
   sessionUserId: null,
   users: seedUsers,
@@ -63,6 +90,8 @@ const empty: Store = {
   tickets: seedTickets,
   ledger: seedLedger,
   directorReports: [],
+  team: seedTeam,
+  activity: seedActivity,
 }
 
 function read(): Store {
@@ -77,6 +106,8 @@ function read(): Store {
       tickets: parsed.tickets ?? [],
       ledger: parsed.ledger ?? [],
       directorReports: parsed.directorReports ?? [],
+      team: parsed.team?.length ? parsed.team : seedTeam,
+      activity: parsed.activity?.length ? parsed.activity : seedActivity,
     }
   } catch {
     return structuredClone(empty)
@@ -199,6 +230,9 @@ type Ctx = Store & {
   setDirectorPrefs: (prefs: DirectorPrefs) => void
   sendDirectorReport: (lotIds: string[], opts?: { openMail?: boolean }) => string
   addTicket: (t: Omit<Ticket, 'id' | 'at'>) => void
+  addTeamMember: (input: { name: string; email: string; orgRole: OrgRole }) => string | null
+  removeTeamMember: (id: string) => string | null
+  setTeamMemberActive: (id: string, active: boolean) => string | null
   resetDemo: () => void
 }
 
@@ -253,74 +287,142 @@ export function SessionProvider({ children }: { children: ReactNode }) {
               balance: 0,
               subscribed: false,
               planId,
+              orgRole: 'owner',
               responsible: input.responsible,
               directorEmail: undefined,
               checko: input.checko,
             }),
             ...s.users,
           ],
+          team: [
+            {
+              id: crypto.randomUUID(),
+              orgUserId: id,
+              name: input.responsible,
+              email: input.email,
+              orgRole: 'owner',
+              active: true,
+              createdAt: new Date().toISOString(),
+            },
+            ...s.team,
+          ],
+          activity: [
+            {
+              id: crypto.randomUUID(),
+              orgUserId: id,
+              actorId: id,
+              actorName: input.responsible,
+              role: input.role,
+              action: 'Регистрация',
+              detail: `${input.company} · ${input.role === 'importer' ? 'заказчик' : 'исполнитель'}`,
+              at: new Date().toISOString(),
+            },
+            ...s.activity,
+          ],
         }))
         return null
       },
       saveLot: (lot) =>
-        patch((s) => ({
-          ...s,
-          lots: s.lots.some((l) => l.id === lot.id) ? s.lots.map((l) => (l.id === lot.id ? lot : l)) : [lot, ...s.lots],
-        })),
+        patch((s) => {
+          const exists = s.lots.some((l) => l.id === lot.id)
+          let next = {
+            ...s,
+            lots: exists ? s.lots.map((l) => (l.id === lot.id ? lot : l)) : [lot, ...s.lots],
+          }
+          const actor = s.users.find((u) => u.id === s.sessionUserId)
+          if (actor) {
+            next = pushActivity(
+              next,
+              actor,
+              exists ? (lot.isDraft ? 'Шаблон обновлён' : 'Лот обновлён') : lot.isDraft ? 'Шаблон создан' : 'Лот опубликован',
+              `${lot.code} · ${lot.from} → ${lot.to}`,
+              lot.id,
+            )
+          }
+          return next
+        }),
       removeLot: (id) => {
         const lot = store.lots.find((l) => l.id === id)
         if (!lot) return 'Лот не найден'
         if (!lot.isDraft) return 'Удалить можно только шаблон'
-        patch((s) => ({ ...s, lots: s.lots.filter((l) => l.id !== id) }))
+        patch((s) => {
+          let next = { ...s, lots: s.lots.filter((l) => l.id !== id) }
+          if (user) next = pushActivity(next, user, 'Шаблон удалён', lot.code, lot.id)
+          return next
+        })
         return null
       },
       startNow: (id) =>
-        patch((s) => ({
-          ...s,
-          lots: s.lots.map((l) => {
-            if (l.id !== id) return l
-            const start = new Date()
-            const end = new Date(start.getTime() + 60 * 60 * 1000)
-            return {
-              ...l,
-              isDraft: false,
-              archived: false,
-              closedAt: undefined,
-              startIso: start.toISOString(),
-              endIso: end.toISOString(),
-            }
-          }),
-        })),
+        patch((s) => {
+          let next = {
+            ...s,
+            lots: s.lots.map((l) => {
+              if (l.id !== id) return l
+              const start = new Date()
+              const end = new Date(start.getTime() + 60 * 60 * 1000)
+              return {
+                ...l,
+                isDraft: false,
+                archived: false,
+                closedAt: undefined,
+                startIso: start.toISOString(),
+                endIso: end.toISOString(),
+              }
+            }),
+          }
+          const lot = next.lots.find((l) => l.id === id)
+          const actor = s.users.find((u) => u.id === s.sessionUserId)
+          if (actor && lot) next = pushActivity(next, actor, 'Слот запущен сейчас', lot.code, id)
+          return next
+        }),
       finishNow: (id) =>
-        patch((s) => ({
-          ...s,
-          lots: s.lots.map((l) => (l.id === id ? { ...l, closedAt: new Date().toISOString() } : l)),
-        })),
+        patch((s) => {
+          let next = {
+            ...s,
+            lots: s.lots.map((l) => (l.id === id ? { ...l, closedAt: new Date().toISOString() } : l)),
+          }
+          const lot = next.lots.find((l) => l.id === id)
+          const actor = s.users.find((u) => u.id === s.sessionUserId)
+          if (actor && lot) next = pushActivity(next, actor, 'Слот закрыт вручную', lot.code, id)
+          return next
+        }),
       archiveLot: (id) =>
-        patch((s) => ({
-          ...s,
-          lots: s.lots.map((l) => (l.id === id ? { ...l, archived: true } : l)),
-        })),
+        patch((s) => {
+          let next = {
+            ...s,
+            lots: s.lots.map((l) => (l.id === id ? { ...l, archived: true } : l)),
+          }
+          const lot = next.lots.find((l) => l.id === id)
+          const actor = s.users.find((u) => u.id === s.sessionUserId)
+          if (actor && lot) next = pushActivity(next, actor, 'Лот в архив', lot.code, id)
+          return next
+        }),
       newSlot: (id, date, time) => {
         const slot = parseSlot(date, time)
         if (!slot) return 'Дата слота — дд.мм.гггг и час чч:мм'
-        patch((s) => ({
-          ...s,
-          lots: s.lots.map((l) =>
-            l.id === id
-              ? {
-                  ...l,
-                  isDraft: false,
-                  archived: false,
-                  settled: false,
-                  closedAt: undefined,
-                  startIso: slot.startIso,
-                  endIso: slot.endIso,
-                  bids: [],
-                }
-              : l,
-          ),
-        }))
+        patch((s) => {
+          let next = {
+            ...s,
+            lots: s.lots.map((l) =>
+              l.id === id
+                ? {
+                    ...l,
+                    isDraft: false,
+                    archived: false,
+                    settled: false,
+                    closedAt: undefined,
+                    startIso: slot.startIso,
+                    endIso: slot.endIso,
+                    bids: [],
+                  }
+                : l,
+            ),
+          }
+          const lot = next.lots.find((l) => l.id === id)
+          const actor = s.users.find((u) => u.id === s.sessionUserId)
+          if (actor && lot) next = pushActivity(next, actor, 'Новый слот', `${lot.code} · ${date} ${time}`, id)
+          return next
+        })
         return null
       },
       addBid: (lotId, amount) => {
@@ -347,50 +449,66 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (last !== undefined && last - amount < step) {
           return `Шаг снижения минимум ${step} $`
         }
-        patch((s) => ({
-          ...s,
-          lots: s.lots.map((l) =>
-            l.id === lotId
-              ? { ...l, bids: [{ userId: user.id, amount, at: new Date().toISOString() }, ...l.bids] }
-              : l,
-          ),
-        }))
+        patch((s) => {
+          let next = {
+            ...s,
+            lots: s.lots.map((l) =>
+              l.id === lotId
+                ? { ...l, bids: [{ userId: user.id, amount, at: new Date().toISOString() }, ...l.bids] }
+                : l,
+            ),
+          }
+          next = pushActivity(next, user, 'Ставка', `${lot.code} · ${amount} $`, lotId)
+          return next
+        })
         return null
       },
       topup: (amount) => {
         if (!user || user.role !== 'forwarder') return 'Нужен вход исполнителя'
         if (amount < TOPUP_MIN) return `Минимум пополнения ${TOPUP_MIN.toLocaleString('ru-RU')} ₽`
-        patch((s) => ({
-          ...s,
-          users: s.users.map((u) => (u.id === user.id ? { ...u, balance: u.balance + amount } : u)),
-          ledger: [
-            {
-              id: crypto.randomUUID(),
-              userId: user.id,
-              amount,
-              at: new Date().toISOString(),
-              note: `Счёт №${Math.floor(10000 + Math.random() * 89999)}`,
-            },
-            ...s.ledger,
-          ],
-        }))
+        patch((s) => {
+          let next = {
+            ...s,
+            users: s.users.map((u) => (u.id === user.id ? { ...u, balance: u.balance + amount } : u)),
+            ledger: [
+              {
+                id: crypto.randomUUID(),
+                userId: user.id,
+                amount,
+                at: new Date().toISOString(),
+                note: `Счёт №${Math.floor(10000 + Math.random() * 89999)}`,
+              },
+              ...s.ledger,
+            ],
+          }
+          next = pushActivity(next, user, 'Пополнение счёта', `+${amount.toLocaleString('ru-RU')} ₽`)
+          return next
+        })
         return null
       },
       setSubscribed: (v) => {
         if (!user) return
         const planId = defaultPlan(user.role, v)
-        patch((s) => ({
-          ...s,
-          users: s.users.map((u) => (u.id === user.id ? { ...u, subscribed: v, planId } : u)),
-        }))
+        patch((s) => {
+          let next = {
+            ...s,
+            users: s.users.map((u) => (u.id === user.id ? { ...u, subscribed: v, planId } : u)),
+          }
+          next = pushActivity(next, user, 'Тариф изменён', v ? 'Подписка включена' : 'Free')
+          return next
+        })
       },
       setPlan: (planId) => {
         if (!user) return
         const subscribed = planId !== 'imp-free' && planId !== 'fwd-free'
-        patch((s) => ({
-          ...s,
-          users: s.users.map((u) => (u.id === user.id ? { ...u, planId, subscribed } : u)),
-        }))
+        patch((s) => {
+          let next = {
+            ...s,
+            users: s.users.map((u) => (u.id === user.id ? { ...u, planId, subscribed } : u)),
+          }
+          next = pushActivity(next, user, 'Тариф изменён', planId)
+          return next
+        })
       },
       setDirectorEmail: (email) => {
         if (!user) return
@@ -410,18 +528,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       setDirectorPrefs: (prefs) => {
         if (!user) return
-        patch((s) => ({
-          ...s,
-          users: s.users.map((u) =>
-            u.id === user.id
-              ? {
-                  ...u,
-                  directorEmail: prefs.email || u.directorEmail,
-                  directorPrefs: prefs,
-                }
-              : u,
-          ),
-        }))
+        patch((s) => {
+          let next = {
+            ...s,
+            users: s.users.map((u) =>
+              u.id === user.id
+                ? {
+                    ...u,
+                    directorEmail: prefs.email || u.directorEmail,
+                    directorPrefs: prefs,
+                  }
+                : u,
+            ),
+          }
+          next = pushActivity(next, user, 'Настройки отчётов', prefs.enabled ? `вкл · ${prefs.cadence}` : 'выкл')
+          return next
+        })
       },
       sendDirectorReport: (lotIds, opts) => {
         if (!user) return 'Нужен вход'
@@ -431,7 +553,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           if (!owner) return s
           const r = pushDirectorMail(s, owner, lotIds, opts?.openMail ?? true)
           message = r.message
-          return r.store
+          return pushActivity(r.store, owner, 'Отчёт директору', message)
         })
         return message
       },
@@ -448,6 +570,62 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             ...s.tickets,
           ],
         })),
+      addTeamMember: (input) => {
+        if (!user) return 'Нужен вход'
+        if (user.orgRole === 'employee') return 'Нет права добавлять сотрудников'
+        const name = input.name.trim()
+        const email = input.email.trim().toLowerCase()
+        if (!name || !email.includes('@')) return 'Имя и e-mail обязательны'
+        if (input.orgRole === 'owner') return 'Owner уже есть — выберите director / manager / employee'
+        patch((s) => {
+          let next = {
+            ...s,
+            team: [
+              {
+                id: crypto.randomUUID(),
+                orgUserId: user.id,
+                name,
+                email,
+                orgRole: input.orgRole,
+                active: true,
+                createdAt: new Date().toISOString(),
+              },
+              ...s.team,
+            ],
+          }
+          next = pushActivity(next, user, 'Сотрудник добавлен', `${name} · ${input.orgRole}`)
+          return next
+        })
+        return null
+      },
+      removeTeamMember: (id) => {
+        if (!user) return 'Нужен вход'
+        if (user.orgRole === 'employee') return 'Нет права удалять'
+        const m = store.team.find((t) => t.id === id && t.orgUserId === user.id)
+        if (!m) return 'Сотрудник не найден'
+        if (m.orgRole === 'owner') return 'Owner удалить нельзя'
+        patch((s) => {
+          let next = { ...s, team: s.team.filter((t) => t.id !== id) }
+          next = pushActivity(next, user, 'Сотрудник удалён', m.name)
+          return next
+        })
+        return null
+      },
+      setTeamMemberActive: (id, active) => {
+        if (!user) return 'Нужен вход'
+        const m = store.team.find((t) => t.id === id && t.orgUserId === user.id)
+        if (!m) return 'Сотрудник не найден'
+        if (m.orgRole === 'owner') return 'Owner нельзя отключить'
+        patch((s) => {
+          let next = {
+            ...s,
+            team: s.team.map((t) => (t.id === id ? { ...t, active } : t)),
+          }
+          next = pushActivity(next, user, active ? 'Сотрудник включён' : 'Сотрудник отключён', m.name)
+          return next
+        })
+        return null
+      },
       resetDemo: () => patch(() => ({ ...structuredClone(empty), sessionUserId: store.sessionUserId })),
     }),
     [store, user],

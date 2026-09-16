@@ -5,6 +5,7 @@ import { bestBid, countryKey, isOpenLot, loadFromContainer, lotStatus, modeEnum,
 import { useSession } from '../app/session'
 import { AuctionBoard } from '../components/AuctionBoard'
 import { PageHero } from '../components/PageHero'
+import { PageLeadCta } from '../components/LeadMagnet'
 import { weekSeries } from '../demo/seed'
 import { formatWhen, loadLabel, modeLabel, ruDec, ruInt } from '../data'
 import { useNow } from '../hooks'
@@ -129,6 +130,7 @@ export function AuctionsPage() {
           </div>
         </aside>
       </div>
+      <PageLeadCta variant="forwarder" />
     </main>
   )
 }

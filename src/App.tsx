@@ -1,12 +1,14 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { Guard } from './app/AppShell'
 import {
+  DirectorActivity,
   DirectorArticle,
   DirectorArticles,
   DirectorDashboard,
   DirectorLayout,
   DirectorRates,
   DirectorReports,
+  DirectorTeam,
 } from './app/DirectorCabinet'
 import {
   ForwarderArchive,
@@ -130,6 +132,8 @@ const router = createBrowserRouter(
           children: [
             { index: true, element: <DirectorDashboard /> },
             { path: 'reports', element: <DirectorReports /> },
+            { path: 'activity', element: <DirectorActivity /> },
+            { path: 'team', element: <DirectorTeam /> },
             { path: 'articles', element: <DirectorArticles /> },
             { path: 'articles/:slug', element: <DirectorArticle /> },
             { path: 'rates', element: <DirectorRates /> },
@@ -156,6 +160,19 @@ const router = createBrowserRouter(
         { path: 'archive', element: <ForwarderArchive /> },
         { path: 'balance', element: <ForwarderBalance /> },
         { path: 'message', element: <ForwarderMessage /> },
+        {
+          path: 'director',
+          element: <DirectorLayout />,
+          children: [
+            { index: true, element: <DirectorDashboard /> },
+            { path: 'reports', element: <DirectorReports /> },
+            { path: 'activity', element: <DirectorActivity /> },
+            { path: 'team', element: <DirectorTeam /> },
+            { path: 'articles', element: <DirectorArticles /> },
+            { path: 'articles/:slug', element: <DirectorArticle /> },
+            { path: 'rates', element: <DirectorRates /> },
+          ],
+        },
       ],
     },
   ],

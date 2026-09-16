@@ -10,23 +10,45 @@ export function Bars({
   const max = Math.max(...a, ...(b ?? []), 1)
   return (
     <div>
-      <div className="flex h-[120px] items-end gap-1.5">
-        {a.map((v, i) => (
-          <div key={labels[i]} className="flex flex-1 flex-col justify-end gap-0.5">
-            {b ? (
-              <div className="w-full rounded-sm bg-brand-2/80" style={{ height: `${(b[i] / max) * 100}%` }} />
-            ) : null}
-            <div className="w-full rounded-sm bg-navy" style={{ height: `${(v / max) * 92}%` }} />
-          </div>
-        ))}
+      <div className="flex h-[140px] items-end gap-1.5">
+        {a.map((v, i) => {
+          const hA = Math.max(4, Math.round((v / max) * 100))
+          const hB = b ? Math.max(4, Math.round((b[i] / max) * 100)) : 0
+          return (
+            <div key={labels[i]} className="flex h-full flex-1 flex-col items-stretch justify-end gap-0.5">
+              {b ? (
+                <div
+                  className="w-full rounded-sm bg-brand-2/85"
+                  style={{ height: `${hB}%`, minHeight: b[i] > 0 ? 4 : 0 }}
+                  title={`Состоялось: ${b[i]}`}
+                />
+              ) : null}
+              <div
+                className="w-full rounded-sm bg-navy"
+                style={{ height: `${hA}%`, minHeight: v > 0 ? 6 : 0 }}
+                title={`Сформировано: ${v}`}
+              />
+            </div>
+          )
+        })}
       </div>
-      <div className="mt-1.5 flex gap-1.5">
+      <div className="mt-2 flex gap-1.5">
         {labels.map((l) => (
           <span key={l} className="flex-1 text-center font-mono text-[9px] text-mist">
             {l}
           </span>
         ))}
       </div>
+      <p className="mt-2 font-mono text-[10px] text-mist">
+        <span className="mr-3 inline-flex items-center gap-1">
+          <span className="inline-block size-2 rounded-sm bg-navy" /> сформировано
+        </span>
+        {b ? (
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block size-2 rounded-sm bg-brand-2" /> состоялось
+          </span>
+        ) : null}
+      </p>
     </div>
   )
 }

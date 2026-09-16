@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { phoneDisplay, phoneHref } from '../nav'
 import { Wordmark } from './Brand'
+import { FooterLeadStrip } from './LeadMagnet'
 
 const links = [
   { to: '/auctions', label: 'Аукционы' },
@@ -8,6 +9,7 @@ const links = [
   { to: '/rates', label: 'Курсы ЦБ' },
   { to: '/director', label: 'Директору' },
   { to: '/pricing', label: 'Тарифы' },
+  { to: '/guide', label: 'Гид' },
   { to: '/rules', label: 'Правила' },
   { to: '/privacy', label: 'Конфиденциальность' },
 ]
@@ -15,6 +17,7 @@ const links = [
 export function Footer() {
   return (
     <footer className="border-t border-white/10 bg-navy text-paper">
+      <FooterLeadStrip />
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-5">
         <Wordmark light compact />
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-fog">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { articles, formatArticleDate } from '../content/articles'
 import { fetchCbrRates, type CbrRate } from '../content/cbr'
 import { moneyCopy } from '../content/money'
@@ -7,25 +7,46 @@ import { compareWin, matchBench } from '../content/marketBench'
 import { ruInt } from '../data'
 import { useNow } from '../hooks'
 import { buildDirectorReportBody, lotWinUsd } from './directorReport'
-import { lotStatus, uniqueBidders, type AppLot } from './engine'
+import { lotStatus, uniqueBidders, type AppLot, type OrgRole } from './engine'
 import { useSession } from './session'
 import { Field, inputClass, Panel } from './ui'
 
-const subNav = [
-  { to: '/app/importer/director', end: true, label: 'Сводка' },
-  { to: '/app/importer/director/reports', label: 'Отчёты' },
-  { to: '/app/importer/director/articles', label: 'Статьи' },
-  { to: '/app/importer/director/rates', label: 'Курсы ЦБ' },
-]
+function useDirectorBase() {
+  const { pathname } = useLocation()
+  return pathname.includes('/app/forwarder/') ? '/app/forwarder/director' : '/app/importer/director'
+}
+
+function orgLots(lots: AppLot[], ownerId: string | undefined, role: 'importer' | 'forwarder' | undefined) {
+  if (role === 'forwarder') {
+    return lots.filter((d) => !d.isDraft && d.bids.some((b) => b.userId === ownerId))
+  }
+  return lots.filter((d) => d.ownerId === ownerId && !d.isDraft)
+}
 
 export function DirectorLayout() {
+  const base = useDirectorBase()
+  const isFwd = base.includes('forwarder')
+  const subNav = [
+    { to: base, end: true, label: 'Сводка' },
+    { to: `${base}/reports`, label: 'Отчёты' },
+    { to: `${base}/activity`, label: 'Журнал' },
+    { to: `${base}/team`, label: 'Команда' },
+    { to: `${base}/articles`, label: 'Статьи' },
+    { to: `${base}/rates`, label: 'Курсы ЦБ' },
+  ]
+
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist">Кабинет директора</p>
-        <h1 className="mt-1 text-2xl font-semibold">Сводная аналитика и отчёты</h1>
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist">
+          {isFwd ? 'Кабинет руководителя исполнителя' : 'Кабинет директора заказчика'}
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold">Сводка, журнал действий и команда</h1>
         <p className="mt-1 max-w-2xl text-[13.5px] text-muted">
-          Общая картина по состоявшимся часам, сравнение с типичными ставками, автоотправка писем. {moneyCopy.freeReg}.
+          {isFwd
+            ? 'Кто ставил, когда пополняли счёт, состав стола. Роли: owner / director / manager / employee.'
+            : 'Кто публиковал лоты, смена тарифа, сотрудники. Роли: owner / director / manager / employee.'}{' '}
+          {moneyCopy.freeReg}.
         </p>
       </div>
       <nav className="flex flex-wrap gap-1 border-b border-line pb-px">
@@ -52,10 +73,17 @@ function heldLots(lots: AppLot[], ownerId: string | undefined, now: number) {
 }
 
 export function DirectorDashboard() {
-  const { user, lots } = useSession()
+  const { user, lots, activity, team } = useSession()
   const now = useNow(2000)
-  const held = heldLots(lots, user?.id, now)
-  const failed = lots.filter((d) => d.ownerId === user?.id && !d.isDraft && lotStatus(d, now) === 'failed')
+  const base = useDirectorBase()
+  const isFwd = user?.role === 'forwarder'
+  const scoped = orgLots(lots, user?.id, user?.role)
+  const held = isFwd
+    ? scoped.filter((d) => lotStatus(d, now) === 'held')
+    : heldLots(lots, user?.id, now)
+  const failed = isFwd
+    ? []
+    : lots.filter((d) => d.ownerId === user?.id && !d.isDraft && lotStatus(d, now) === 'failed')
   const wins = held.map((l) => lotWinUsd(l)).filter((x): x is number => x !== undefined)
   const avgWin = wins.length ? Math.round(wins.reduce((a, b) => a + b, 0) / wins.length) : 0
   const belowMid = held.filter((l) => {
@@ -64,16 +92,57 @@ export function DirectorDashboard() {
     const b = matchBench({ country: l.country, cargo: l.cargo, mode: l.mode, cbm: l.cbm })
     return b ? compareWin(w, b).vsMidPct > 0 : false
   }).length
+  const myTeam = team.filter((t) => t.orgUserId === user?.id && t.active)
+  const recent = activity.filter((a) => a.orgUserId === user?.id).slice(0, 5)
 
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Состоялось" value={String(held.length)} hint="часов с ≥2 игроками" />
-        <Stat label="Не состоялось" value={String(failed.length)} hint="плотность / пустые слоты" />
-        <Stat label="Средняя победа" value={avgWin ? `${ruInt.format(avgWin)} $` : '—'} hint="по вашим часам" />
+        <Stat label={isFwd ? 'Участия (held)' : 'Состоялось'} value={String(held.length)} hint={isFwd ? 'лоты с вашей ставкой' : 'часов с ≥2 игроками'} />
+        <Stat label={isFwd ? 'Команда' : 'Не состоялось'} value={isFwd ? String(myTeam.length) : String(failed.length)} hint={isFwd ? 'активных сотрудников' : 'плотность / пустые слоты'} />
+        <Stat label="Средняя победа" value={avgWin ? `${ruInt.format(avgWin)} $` : '—'} hint="по часам" />
         <Stat label="Ниже рынка" value={String(belowMid)} hint="побед ниже середины полосы" />
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel title="Последние действия">
+          {recent.length === 0 ? (
+            <p className="text-[13.5px] text-muted">Пока пусто.</p>
+          ) : (
+            <ul className="space-y-2">
+              {recent.map((a) => (
+                <li key={a.id} className="rounded-lg border border-line/70 bg-fog/40 px-3 py-2 text-[13px]">
+                  <span className="font-semibold text-ink">{a.action}</span>
+                  <span className="text-muted"> · {a.actorName}</span>
+                  <p className="mt-0.5 text-[12px] text-mist">{a.detail}</p>
+                  <p className="font-mono text-[10px] text-mist">{new Date(a.at).toLocaleString('ru-RU')}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link to={`${base}/activity`} className="mt-3 inline-block text-[13px] font-semibold text-brand underline">
+            Весь журнал
+          </Link>
+        </Panel>
+        <Panel title="Команда">
+          <ul className="space-y-1.5 text-[13px]">
+            {myTeam.map((m) => (
+              <li key={m.id} className="flex items-center justify-between gap-2 border-b border-line/60 py-1.5">
+                <span>
+                  <span className="font-medium">{m.name}</span>
+                  <span className="ml-2 font-mono text-[11px] text-mist">{m.orgRole}</span>
+                </span>
+                <span className="text-[12px] text-muted">{m.email}</span>
+              </li>
+            ))}
+          </ul>
+          <Link to={`${base}/team`} className="mt-3 inline-block text-[13px] font-semibold text-brand underline">
+            Настройки сотрудников
+          </Link>
+        </Panel>
+      </div>
+
+      {!isFwd ? (
       <Panel title="Сравнение с типичными аукционами">
         <p className="mb-3 text-[13px] text-muted">
           Для каждого состоявшегося часа — полоса «как обычно играют» похожие лоты (коридор, груз, м³) и ваша победа.
@@ -140,13 +209,37 @@ export function DirectorDashboard() {
           </div>
         )}
       </Panel>
+      ) : (
+        <Panel title="Участия стола">
+          {held.length === 0 ? (
+            <p className="text-[13.5px] text-muted">Пока нет состоявшихся часов с вашими ставками.</p>
+          ) : (
+            <ul className="space-y-2 text-[13px]">
+              {held.slice(0, 8).map((lot) => {
+                const mine = lot.bids.filter((b) => b.userId === user?.id).sort((a, b) => a.amount - b.amount)[0]
+                return (
+                  <li key={lot.id} className="flex justify-between gap-3 border-b border-line/60 py-2">
+                    <Link to={`/app/forwarder/lots/${lot.id}`} className="font-semibold text-brand underline">
+                      {lot.code}
+                    </Link>
+                    <span className="text-muted">
+                      {lot.from} → {lot.to}
+                    </span>
+                    <span className="tabular-nums font-medium">{mine ? `${ruInt.format(mine.amount)} $` : '—'}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </Panel>
+      )}
 
       <Panel title="Почта директора">
         <p className="text-[13.5px] text-muted">
           {user?.directorEmail || user?.directorPrefs?.email
             ? `Письма: ${user.directorPrefs?.email || user.directorEmail}`
             : 'Почта не задана — настройте в разделе «Отчёты».'}{' '}
-          <Link to="/app/importer/director/reports" className="font-semibold text-brand underline">
+          <Link to={`${base}/reports`} className="font-semibold text-brand underline">
             Автоотправка
           </Link>
         </p>
@@ -277,13 +370,14 @@ export function DirectorReports() {
 }
 
 export function DirectorArticles() {
+  const base = useDirectorBase()
   return (
     <div className="space-y-4">
       <p className="text-[13.5px] text-muted">Подраздел «Статьи» — короткие материалы для собственника и закупки.</p>
       <ul className="divide-y divide-line rounded-xl border border-line bg-white">
         {articles.map((a) => (
           <li key={a.slug}>
-            <Link to={`/app/importer/director/articles/${a.slug}`} className="block px-4 py-3 hover:bg-fog/50">
+            <Link to={`${base}/articles/${a.slug}`} className="block px-4 py-3 hover:bg-fog/50">
               <p className="text-[14px] font-semibold text-ink">{a.title}</p>
               <p className="mt-0.5 text-[13px] text-muted">{a.dek}</p>
               <p className="mt-1 font-mono text-[10px] text-mist">
@@ -298,13 +392,14 @@ export function DirectorArticles() {
 }
 
 export function DirectorArticle() {
+  const base = useDirectorBase()
   const { slug } = useParams()
   const one = articles.find((a) => a.slug === slug)
   if (!one) {
     return (
       <p className="text-[13.5px] text-muted">
         Статья не найдена.{' '}
-        <Link to="/app/importer/director/articles" className="text-brand underline">
+        <Link to={`${base}/articles`} className="text-brand underline">
           К списку
         </Link>
       </p>
@@ -312,7 +407,7 @@ export function DirectorArticle() {
   }
   return (
     <article className="space-y-4">
-      <Link to="/app/importer/director/articles" className="text-[13px] text-brand hover:underline">
+      <Link to={`${base}/articles`} className="text-[13px] text-brand hover:underline">
         ← Все статьи
       </Link>
       <div>
@@ -399,6 +494,168 @@ function Stat({ label, value, hint }: { label: string; value: string; hint: stri
       <p className="text-[11px] uppercase tracking-wide text-mist">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
       <p className="mt-1 text-[12px] text-muted">{hint}</p>
+    </div>
+  )
+}
+
+const roleLabel: Record<OrgRole, string> = {
+  owner: 'Owner',
+  director: 'Директор',
+  manager: 'Руководитель',
+  employee: 'Сотрудник',
+}
+
+export function DirectorActivity() {
+  const { user, activity } = useSession()
+  const rows = activity.filter((a) => a.orgUserId === user?.id)
+
+  return (
+    <Panel title="Журнал действий">
+      <p className="mb-3 text-[13px] text-muted">
+        Кто что когда сделал в кабинете компании: лоты, ставки, тариф, команда, отчёты. Директор видит полную ленту.
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-[13.5px] text-muted">Пока нет записей.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-line text-mist">
+                <th className="py-2 pr-2 font-medium">Когда</th>
+                <th className="py-2 pr-2 font-medium">Кто</th>
+                <th className="py-2 pr-2 font-medium">Действие</th>
+                <th className="py-2 font-medium">Детали</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((a) => (
+                <tr key={a.id} className="border-b border-line/70 align-top">
+                  <td className="py-2 pr-2 font-mono text-[11px] text-mist whitespace-nowrap">
+                    {new Date(a.at).toLocaleString('ru-RU')}
+                  </td>
+                  <td className="py-2 pr-2 font-medium">{a.actorName}</td>
+                  <td className="py-2 pr-2">{a.action}</td>
+                  <td className="py-2 text-muted">{a.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  )
+}
+
+export function DirectorTeam() {
+  const { user, team, addTeamMember, removeTeamMember, setTeamMemberActive } = useSession()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [orgRole, setOrgRole] = useState<OrgRole>('employee')
+  const [err, setErr] = useState<string | null>(null)
+  const rows = team.filter((t) => t.orgUserId === user?.id)
+  const canEdit = user?.orgRole !== 'employee'
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const msg = addTeamMember({ name, email, orgRole })
+    if (msg) {
+      setErr(msg)
+      return
+    }
+    setErr(null)
+    setName('')
+    setEmail('')
+    setOrgRole('employee')
+  }
+
+  return (
+    <div className="space-y-5">
+      <Panel title="Ролевая модель">
+        <ul className="grid gap-2 text-[13px] text-muted sm:grid-cols-2">
+          <li>
+            <span className="font-semibold text-ink">Owner</span> — полный доступ, нельзя удалить.
+          </li>
+          <li>
+            <span className="font-semibold text-ink">Директор</span> — сводка, журнал, отчёты, команда.
+          </li>
+          <li>
+            <span className="font-semibold text-ink">Руководитель</span> — операционка и журнал без удаления owner.
+          </li>
+          <li>
+            <span className="font-semibold text-ink">Сотрудник</span> — рабочий кабинет, без настроек команды.
+          </li>
+        </ul>
+      </Panel>
+
+      <Panel title="Сотрудники">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-line text-mist">
+                <th className="py-2 pr-2 font-medium">Имя</th>
+                <th className="py-2 pr-2 font-medium">E-mail</th>
+                <th className="py-2 pr-2 font-medium">Роль</th>
+                <th className="py-2 pr-2 font-medium">Статус</th>
+                <th className="py-2 font-medium" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((m) => (
+                <tr key={m.id} className="border-b border-line/70">
+                  <td className="py-2 pr-2 font-medium">{m.name}</td>
+                  <td className="py-2 pr-2 text-muted">{m.email}</td>
+                  <td className="py-2 pr-2 font-mono text-[12px]">{roleLabel[m.orgRole]}</td>
+                  <td className="py-2 pr-2">{m.active ? 'активен' : 'выкл'}</td>
+                  <td className="py-2 text-right">
+                    {canEdit && m.orgRole !== 'owner' ? (
+                      <span className="inline-flex gap-2">
+                        <button
+                          type="button"
+                          className="text-[12px] underline"
+                          onClick={() => setTeamMemberActive(m.id, !m.active)}
+                        >
+                          {m.active ? 'откл.' : 'вкл.'}
+                        </button>
+                        <button type="button" className="text-[12px] text-danger underline" onClick={() => removeTeamMember(m.id)}>
+                          удалить
+                        </button>
+                      </span>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      {canEdit ? (
+        <Panel title="Добавить сотрудника">
+          <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
+            <Field label="ФИО">
+              <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} required />
+            </Field>
+            <Field label="E-mail">
+              <input className={inputClass} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </Field>
+            <Field label="Роль">
+              <select className={inputClass} value={orgRole} onChange={(e) => setOrgRole(e.target.value as OrgRole)}>
+                <option value="director">Директор</option>
+                <option value="manager">Руководитель</option>
+                <option value="employee">Сотрудник</option>
+              </select>
+            </Field>
+            <div className="flex items-end">
+              <button type="submit" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
+                Добавить
+              </button>
+            </div>
+            {err ? <p className="sm:col-span-2 text-[13px] text-danger">{err}</p> : null}
+          </form>
+        </Panel>
+      ) : (
+        <p className="text-[13px] text-muted">У роли employee нет права менять команду.</p>
+      )}
     </div>
   )
 }

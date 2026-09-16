@@ -1,7 +1,7 @@
 import { includedChecks } from '../content/included'
 import { lots as publicLots, modeLabel } from '../data'
 import { importerLotBids, importerLots, turkeyLots, vietnamLots } from '../demo/seed'
-import type { AppLot, Ledger, Ticket, User } from './engine'
+import type { ActivityEvent, AppLot, Ledger, TeamMember, Ticket, User } from './engine'
 import { parseDdTime } from './engine'
 
 export const U_IMP = 'u-imp'
@@ -24,6 +24,7 @@ export const seedUsers: User[] = [
     balance: 0,
     subscribed: true,
     planId: 'imp-zakupka',
+    orgRole: 'owner',
     responsible: 'Трусов Д. Р.',
     directorEmail: 'director@rlt.local',
     directorPrefs: {
@@ -46,6 +47,7 @@ export const seedUsers: User[] = [
     balance: 18500,
     subscribed: true,
     planId: 'fwd-stol',
+    orgRole: 'owner',
     responsible: 'Трусов Д. Р.',
   },
   {
@@ -60,6 +62,7 @@ export const seedUsers: User[] = [
     balance: 22000,
     subscribed: true,
     planId: 'fwd-stol',
+    orgRole: 'owner',
     responsible: 'Иванов А. А.',
   },
   {
@@ -74,6 +77,7 @@ export const seedUsers: User[] = [
     balance: 9000,
     subscribed: false,
     planId: 'fwd-free',
+    orgRole: 'owner',
     responsible: 'Карпов С. С.',
   },
 ]
@@ -469,4 +473,136 @@ export const seedLedger: Ledger[] = [
   { id: 'led-1', userId: U_FWD, amount: 15000, at: '2026-07-03T11:00:00+03:00', note: 'Пополнение' },
   { id: 'led-2', userId: U_FWD, amount: 10000, at: '2026-08-11T11:00:00+03:00', note: 'Пополнение' },
   { id: 'led-3', userId: U_FWD, amount: 5000, at: '2026-09-02T11:00:00+03:00', note: 'Пополнение' },
+]
+
+export const seedTeam: TeamMember[] = [
+  {
+    id: 'tm-imp-1',
+    orgUserId: U_IMP,
+    name: 'Трусов Д. Р.',
+    email: 'import@rlt.local',
+    orgRole: 'owner',
+    active: true,
+    createdAt: '2026-07-01T10:00:00+03:00',
+  },
+  {
+    id: 'tm-imp-2',
+    orgUserId: U_IMP,
+    name: 'Кравцов С. В.',
+    email: 'director@rlt.local',
+    orgRole: 'director',
+    active: true,
+    createdAt: '2026-07-02T10:00:00+03:00',
+  },
+  {
+    id: 'tm-imp-3',
+    orgUserId: U_IMP,
+    name: 'Логист А. П.',
+    email: 'logist@rlt.local',
+    orgRole: 'manager',
+    active: true,
+    createdAt: '2026-07-10T10:00:00+03:00',
+  },
+  {
+    id: 'tm-imp-4',
+    orgUserId: U_IMP,
+    name: 'Менеджер закупок',
+    email: 'buyer@rlt.local',
+    orgRole: 'employee',
+    active: true,
+    createdAt: '2026-08-01T10:00:00+03:00',
+  },
+  {
+    id: 'tm-fwd-1',
+    orgUserId: U_FWD,
+    name: 'Трусов Д. Р.',
+    email: 'forward@rlt.local',
+    orgRole: 'owner',
+    active: true,
+    createdAt: '2026-07-01T10:00:00+03:00',
+  },
+  {
+    id: 'tm-fwd-2',
+    orgUserId: U_FWD,
+    name: 'Руководитель стола',
+    email: 'head@rlt.local',
+    orgRole: 'director',
+    active: true,
+    createdAt: '2026-07-05T10:00:00+03:00',
+  },
+  {
+    id: 'tm-fwd-3',
+    orgUserId: U_FWD,
+    name: 'Биддер 1',
+    email: 'bid1@rlt.local',
+    orgRole: 'employee',
+    active: true,
+    createdAt: '2026-08-12T10:00:00+03:00',
+  },
+]
+
+export const seedActivity: ActivityEvent[] = [
+  {
+    id: 'act-1',
+    orgUserId: U_IMP,
+    actorId: U_IMP,
+    actorName: 'Трусов Д. Р.',
+    role: 'importer',
+    action: 'Лот опубликован',
+    detail: '26-44 · трикотаж Гуанчжоу → Москва',
+    at: '2026-09-14T09:00:00+03:00',
+    lotId: 'live-now',
+  },
+  {
+    id: 'act-2',
+    orgUserId: U_IMP,
+    actorId: 'tm-imp-3',
+    actorName: 'Логист А. П.',
+    role: 'importer',
+    action: 'Шаблон сохранён',
+    detail: 'Черновик маршрута Yiwu → Москва',
+    at: '2026-09-12T14:20:00+03:00',
+  },
+  {
+    id: 'act-3',
+    orgUserId: U_IMP,
+    actorId: U_IMP,
+    actorName: 'Трусов Д. Р.',
+    role: 'importer',
+    action: 'Тариф изменён',
+    detail: 'Подписка → Закупка',
+    at: '2026-09-01T11:00:00+03:00',
+  },
+  {
+    id: 'act-4',
+    orgUserId: U_FWD,
+    actorId: U_FWD,
+    actorName: 'Трусов Д. Р.',
+    role: 'forwarder',
+    action: 'Ставка',
+    detail: '26-44 · 3900 $',
+    at: '2026-09-14T10:15:00+03:00',
+    lotId: 'live-now',
+  },
+  {
+    id: 'act-5',
+    orgUserId: U_FWD,
+    actorId: 'tm-fwd-3',
+    actorName: 'Биддер 1',
+    role: 'forwarder',
+    action: 'Ставка',
+    detail: 'T-14 · 2550 $',
+    at: '2026-09-13T16:40:00+03:00',
+    lotId: 't-201',
+  },
+  {
+    id: 'act-6',
+    orgUserId: U_FWD,
+    actorId: U_FWD,
+    actorName: 'Трусов Д. Р.',
+    role: 'forwarder',
+    action: 'Пополнение счёта',
+    detail: '+5 000 ₽',
+    at: '2026-09-02T11:00:00+03:00',
+  },
 ]
