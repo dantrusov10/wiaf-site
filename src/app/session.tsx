@@ -27,7 +27,7 @@ type Store = {
   ledger: Ledger[]
 }
 
-const KEY = 'wiaf-local-v7'
+const KEY = 'wiaf-local-v8'
 
 const empty: Store = {
   sessionUserId: null,

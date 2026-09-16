@@ -23,16 +23,24 @@ import {
 import { MessageForm } from './MessageForm'
 import { useSession } from './session'
 import { EmptyState, Panel } from './ui'
+import { DataTable, type Col } from './DataTable'
 
 type DealRow = {
   id: string
   code: string
   from: string
   to: string
+  cargo: string
+  country: string
+  cbm: number
+  kg: number
+  mode: string
+  container: string
   myBid: number
   winBid: number
   bidders: number
   status: 'won' | 'lost' | 'archive'
+  slot: string
 }
 
 function dealsOf(userId: string, lots: AppLot[], now: number): DealRow[] {
@@ -53,10 +61,17 @@ function dealsOf(userId: string, lots: AppLot[], now: number): DealRow[] {
       code: l.code,
       from: l.from,
       to: l.to,
+      cargo: l.cargo,
+      country: l.country,
+      cbm: l.cbm,
+      kg: l.kg,
+      mode: l.mode,
+      container: l.container,
       myBid,
       winBid: win,
       bidders: uniqueBidders(l.bids),
       status,
+      slot: slotLabel(l.startIso),
     })
   }
   return out
@@ -241,41 +256,81 @@ export function ForwarderHome() {
 
 function DealTable({ items }: { items: DealRow[] }) {
   if (!items.length) {
-    return <p className="text-[13.5px] text-muted">Пока нет закрытых слотов с вашей ставкой.</p>
+    return <p className="px-4 py-8 text-center text-[13.5px] text-muted">Пока нет закрытых слотов с вашей ставкой.</p>
   }
+
+  const columns: Col<DealRow>[] = [
+    { key: 'code', label: 'Код', get: (d) => d.code, className: 'font-mono' },
+    { key: 'country', label: 'Страна', get: (d) => d.country },
+    { key: 'route', label: 'Маршрут', get: (d) => `${d.from} → ${d.to}` },
+    { key: 'cargo', label: 'Груз', get: (d) => d.cargo },
+    { key: 'cbm', label: 'м³', get: (d) => d.cbm, sortType: 'number', cell: (d) => <span className="font-mono">{ruDec.format(d.cbm)}</span> },
+    { key: 'mode', label: 'Транспорт', get: (d) => d.mode },
+    { key: 'container', label: 'Загрузка', get: (d) => d.container },
+    { key: 'my', label: 'Моя $', get: (d) => d.myBid, sortType: 'number', cell: (d) => <span className="font-mono">${ruInt.format(d.myBid)}</span> },
+    { key: 'win', label: 'Победа $', get: (d) => d.winBid, sortType: 'number', cell: (d) => <span className="font-mono">${ruInt.format(d.winBid)}</span> },
+    { key: 'n', label: 'n', get: (d) => d.bidders, sortType: 'number' },
+    { key: 'slot', label: 'Слот', get: (d) => d.slot },
+    {
+      key: 'status',
+      label: 'Итог',
+      get: (d) => (d.status === 'won' ? 'выиграли' : d.status === 'lost' ? 'ниже' : 'архив'),
+    },
+  ]
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[680px] text-left text-[13px]">
-        <thead className="border-b border-line font-mono text-[10px] uppercase text-mist">
-          <tr>
-            <th className="py-2 pr-3">Код</th>
-            <th className="py-2 pr-3">Маршрут</th>
-            <th className="py-2 pr-3">Моя $</th>
-            <th className="py-2 pr-3">Победа $</th>
-            <th className="py-2 pr-3">Игроки</th>
-            <th className="py-2">Итог</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((d) => (
-            <tr key={d.id} className="border-b border-line/80 last:border-0">
-              <td className="py-2 pr-3 font-mono">
-                <Link to={`/app/forwarder/lots/${d.id}`} className="underline">
-                  {d.code}
-                </Link>
-              </td>
-              <td className="py-2 pr-3">
-                {d.from} → {d.to}
-              </td>
-              <td className="py-2 pr-3 font-mono">${ruInt.format(d.myBid)}</td>
-              <td className="py-2 pr-3 font-mono">${ruInt.format(d.winBid)}</td>
-              <td className="py-2 pr-3">{d.bidders}</td>
-              <td className="py-2">{d.status === 'won' ? 'выиграли' : d.status === 'lost' ? 'ниже' : 'архив'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      rows={items}
+      columns={columns}
+      rowKey={(d) => d.id}
+      facetKey="country"
+      facetAllLabel="Все страны"
+      searchPlaceholder="Поиск: код, маршрут, груз…"
+      renderDetail={(d, close) => (
+        <div className="space-y-3 text-[13.5px]">
+          <p className="font-mono text-[11px] text-mist">
+            {d.code} · {d.status === 'won' ? 'выиграли' : d.status === 'lost' ? 'ниже победы' : 'архив'}
+          </p>
+          <h2 className="text-lg font-semibold">
+            {d.from} → {d.to}
+          </h2>
+          <p className="text-muted">
+            {d.cargo} · {d.country}
+          </p>
+          <dl className="grid grid-cols-2 gap-2 border-y border-line py-3 font-mono text-[12px]">
+            <div>
+              <dt className="text-mist">м³ / кг</dt>
+              <dd>
+                {ruDec.format(d.cbm)} / {ruInt.format(d.kg)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-mist">Транспорт</dt>
+              <dd className="font-sans">{d.mode}</dd>
+            </div>
+            <div>
+              <dt className="text-mist">Моя ставка</dt>
+              <dd>${ruInt.format(d.myBid)}</dd>
+            </div>
+            <div>
+              <dt className="text-mist">Победа</dt>
+              <dd>${ruInt.format(d.winBid)}</dd>
+            </div>
+            <div>
+              <dt className="text-mist">Игроки</dt>
+              <dd>{d.bidders}</dd>
+            </div>
+            <div>
+              <dt className="text-mist">Слот</dt>
+              <dd className="font-sans">{d.slot}</dd>
+            </div>
+          </dl>
+          <Link to={`/app/forwarder/lots/${d.id}`} className="inline-flex rounded-lg bg-brand px-3 py-2 text-[13px] font-semibold text-white" onClick={close}>
+            Карточка лота
+          </Link>
+        </div>
+      )}
+    />
   )
 }
 
@@ -283,22 +338,59 @@ function CountryFeed({ name, keyName, note }: { name: string; keyName: string; n
   const { lots } = useSession()
   const now = useNow(1000)
   const feed = lots.filter((l) => countryKey(l.country) === keyName && isOpenLot(l, now))
+
+  const columns: Col<AppLot>[] = [
+    { key: 'code', label: 'Код', get: (l) => l.code, className: 'font-mono' },
+    { key: 'route', label: 'Маршрут', get: (l) => `${l.from} → ${l.to}`, cell: (l) => <span className="font-medium">{l.from} → {l.to}</span> },
+    { key: 'cargo', label: 'Груз', get: (l) => l.cargo },
+    { key: 'hs', label: 'ТН ВЭД', get: (l) => l.hs || '—', className: 'font-mono' },
+    { key: 'cbm', label: 'м³', get: (l) => l.cbm, sortType: 'number', cell: (l) => <span className="font-mono">{ruDec.format(l.cbm)}</span> },
+    { key: 'kg', label: 'кг', get: (l) => l.kg, sortType: 'number', cell: (l) => <span className="font-mono">{ruInt.format(l.kg)}</span> },
+    { key: 'mode', label: 'Транспорт', get: (l) => l.mode },
+    { key: 'container', label: 'Загрузка', get: (l) => loadLabel(loadFromContainer(l.container)) },
+    { key: 'incoterm', label: 'Базис', get: (l) => l.incoterm },
+    {
+      key: 'value',
+      label: 'Груз ₽',
+      get: (l) => l.cargoValue,
+      sortType: 'number',
+      cell: (l) => <span className="font-mono">{l.cargoValue ? ruInt.format(l.cargoValue) : '0'}</span>,
+    },
+    { key: 'slot', label: 'Слот', get: (l) => slotLabel(l.startIso) },
+    { key: 'st', label: 'Статус', get: (l) => (lotStatus(l, now) === 'live' ? 'идёт' : 'очередь') },
+  ]
+
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
         <p className="mt-1 text-[13.5px] text-muted">{note}</p>
       </div>
-      {feed.length ? (
-        feed.map((lot) => <LotCard key={lot.id} lot={lot} now={now} />)
-      ) : (
-        <EmptyState
-          title="В этой стране пока пусто"
-          text="Живая лента сейчас — Китай. Пустую Турцию и Индию не обещаем на главной."
-          to="/app/forwarder/china"
-          cta="К ленте Китая"
-        />
-      )}
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
+        {feed.length === 0 ? (
+          <EmptyState
+            title="В этой стране пока пусто"
+            text="Живая лента сейчас — Китай. Пустую Турцию и Индию не обещаем на главной."
+            to="/app/forwarder/china"
+            cta="К ленте Китая"
+          />
+        ) : (
+          <DataTable
+            rows={feed}
+            columns={columns}
+            rowKey={(l) => l.id}
+            searchPlaceholder="Поиск: маршрут, ТН ВЭД, груз…"
+            renderDetail={(lot, close) => (
+              <div className="space-y-4">
+                <LotCard lot={lot} now={now} />
+                <Link to={`/app/forwarder/lots/${lot.id}`} className="inline-flex rounded-lg border border-line px-3 py-2 text-[13px]" onClick={close}>
+                  Полная карточка
+                </Link>
+              </div>
+            )}
+          />
+        )}
+      </div>
     </div>
   )
 }
@@ -328,9 +420,9 @@ export function ForwarderWon() {
   const now = useNow(2000)
   const deals = user ? dealsOf(user.id, lots, now) : []
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4">
       <h1 className="text-2xl font-semibold">Выигранные</h1>
-      <div className="rounded-xl border border-line bg-white p-4">
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
         <DealTable items={deals.filter((d) => d.status === 'won')} />
       </div>
     </div>
@@ -342,9 +434,9 @@ export function ForwarderLost() {
   const now = useNow(2000)
   const deals = user ? dealsOf(user.id, lots, now) : []
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4">
       <h1 className="text-2xl font-semibold">Проигранные</h1>
-      <div className="rounded-xl border border-line bg-white p-4">
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
         <DealTable items={deals.filter((d) => d.status === 'lost')} />
       </div>
     </div>
@@ -356,9 +448,9 @@ export function ForwarderArchive() {
   const now = useNow(2000)
   const deals = user ? dealsOf(user.id, lots, now) : []
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4">
       <h1 className="text-2xl font-semibold">Архив</h1>
-      <div className="rounded-xl border border-line bg-white p-4">
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
         <DealTable items={deals.filter((d) => d.status === 'archive')} />
       </div>
     </div>

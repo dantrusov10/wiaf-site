@@ -17,6 +17,7 @@ import {
 } from './engine'
 import { Bars, Stat } from './charts'
 import { EmptyState, Field, inputClass, Panel } from './ui'
+import { DataTable, type Col } from './DataTable'
 import { MessageForm } from './MessageForm'
 import { useSession } from './session'
 
@@ -134,21 +135,18 @@ export function ImporterHome() {
               cta="Выложить слот"
             />
           ) : (
-            <table className="w-full text-left text-[13px]">
-              <tbody>
-                {current.map((d) => (
-                  <tr key={d.id} className="border-b border-line last:border-0">
-                    <td className="py-2 pr-2 font-medium">
-                      <Link to={`/app/importer/lots/${d.id}`} className="underline">
-                        {d.from} → {d.to}
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-2 text-muted">{slotLabel(d.startIso)}</td>
-                    <td className="py-2 text-right font-mono">{lotStatus(d, now) === 'live' ? 'идёт' : 'очередь'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable
+              rows={current}
+              columns={[
+                { key: 'route', label: 'Маршрут', get: (d) => `${d.from} → ${d.to}`, cell: (d) => <span className="font-medium">{d.from} → {d.to}</span> },
+                { key: 'cargo', label: 'Груз', get: (d) => d.cargo },
+                { key: 'slot', label: 'Слот', get: (d) => slotLabel(d.startIso) },
+                { key: 'st', label: 'Статус', get: (d) => (lotStatus(d, now) === 'live' ? 'идёт' : 'очередь') },
+              ]}
+              rowKey={(d) => d.id}
+              searchPlaceholder="Поиск по маршруту…"
+              renderDetail={(d, close) => <LotDetail lot={d} now={now} onClose={close} />}
+            />
           )}
         </Panel>
         <Panel title="Слоты по неделям">
@@ -296,23 +294,30 @@ export function ImporterCreate() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Создать аукцион</h1>
-      <p className="mt-2 text-[13.5px] text-muted">
-        По умолчанию один отправитель. Несколько фабрик — редкий случай, не первый экран.
-      </p>
-      <ol className="mt-5 flex flex-wrap gap-2">
-        {steps.map((s, i) => (
-          <li
-            key={s}
-            className={`rounded-lg px-3 py-1 font-mono text-[11px] ${i === step ? 'bg-brand text-white' : 'border border-line bg-white text-muted'}`}
-          >
-            {i + 1}. {s}
-          </li>
-        ))}
-      </ol>
+    <div className="mx-auto max-w-5xl">
+      <div className="grid gap-8 lg:grid-cols-[1fr_16rem]">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Создать аукцион</h1>
+          <p className="mt-2 text-[13.5px] text-muted">
+            Можно переключать этапы сверху — предпросмотр без потери данных. Публикация только после «Проверить».
+          </p>
+          <ol className="mt-5 flex flex-wrap gap-2">
+            {steps.map((s, i) => (
+              <li key={s}>
+                <button
+                  type="button"
+                  onClick={() => setStep(i)}
+                  className={`rounded-lg px-3 py-1.5 font-mono text-[11px] transition-colors ${
+                    i === step ? 'bg-brand text-white' : 'border border-line bg-white text-muted hover:border-brand hover:text-ink'
+                  }`}
+                >
+                  {i + 1}. {s}
+                </button>
+              </li>
+            ))}
+          </ol>
 
-      <div className="mt-6 space-y-4 rounded-xl border border-line bg-white p-5">
+          <div className="mt-6 space-y-4 rounded-xl border border-line bg-white p-5">
         {step === 0 ? (
           <>
             <Field label="Название аукциона" hint="Своё или оставьте пустым — подставим маршрут">
@@ -556,6 +561,116 @@ export function ImporterCreate() {
           </p>
         ) : null}
       </div>
+        </div>
+
+        <aside className="h-fit rounded-xl border border-line bg-white p-4 lg:sticky lg:top-24">
+          <p className="font-mono text-[10px] uppercase tracking-wide text-mist">Предпросмотр</p>
+          <p className="mt-2 text-[15px] font-semibold">{form.title || `${form.from || '…'} → ${form.to || '…'}`}</p>
+          <ul className="mt-3 space-y-1.5 text-[12.5px] text-muted">
+            <li>
+              {form.country} · {form.incoterm} · {form.mode}
+            </li>
+            <li>
+              {form.cargo || 'груз'} · ТН ВЭД {form.hs || '—'}
+            </li>
+            <li className="font-mono">
+              {form.cbm || '0'} м³ · {form.kg || '0'} кг · {form.places || '0'} мест
+            </li>
+            <li>
+              {form.container} · страховка {form.insurance ? 'да' : 'нет'} · ТО {form.customs ? 'да' : 'нет'}
+            </li>
+            <li>
+              Слот {form.date || '—'} {form.time} · готовность {form.ready || '—'}
+            </li>
+            <li>
+              Стоимость {form.cargoValue || '0'} {form.currency}
+            </li>
+          </ul>
+          <p className="mt-4 text-[12px] text-mist">Этап {step + 1} из {steps.length}. Клик по шагам сверху — свободный переход.</p>
+        </aside>
+      </div>
+    </div>
+  )
+}
+
+function LotDetail({ lot, now, onClose }: { lot: AppLot; now: number; onClose: () => void }) {
+  const st = lotStatus(lot, now)
+  const win = bestBid(lot.bids)
+  return (
+    <div className="space-y-4 text-[13.5px]">
+      <div>
+        <p className="font-mono text-[11px] text-mist">
+          {lot.code} · {statusRu(st)}
+        </p>
+        <h2 className="mt-1 text-lg font-semibold">{lot.title}</h2>
+        <p className="mt-1 text-muted">
+          {lot.from} → {lot.to} · {lot.country}
+        </p>
+      </div>
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-y border-line py-3 font-mono text-[12px]">
+        <div>
+          <dt className="text-mist">Груз</dt>
+          <dd className="font-sans text-[13px] font-medium">{lot.cargo}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">ТН ВЭД</dt>
+          <dd>{lot.hs || '—'}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">м³ / кг / мест</dt>
+          <dd>
+            {ruDec.format(lot.cbm)} / {ruInt.format(lot.kg)} / {lot.places}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-mist">Стоимость груза</dt>
+          <dd>
+            {lot.cargoValue ? `${ruInt.format(lot.cargoValue)} ${lot.currency}` : '0 — риск'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-mist">Транспорт</dt>
+          <dd className="font-sans">{lot.mode}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">Контейнер</dt>
+          <dd className="font-sans">{lot.container}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">Базис</dt>
+          <dd>{lot.incoterm}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">Слот</dt>
+          <dd className="font-sans">{slotLabel(lot.startIso)}</dd>
+        </div>
+        <div>
+          <dt className="text-mist">Страховка / ТО</dt>
+          <dd>
+            {lot.insurance ? 'да' : 'нет'} / {lot.customs ? 'да' : 'нет'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-mist">Игроки / min $</dt>
+          <dd>
+            {lot.bids.length ? uniqueBidders(lot.bids) : 0}
+            {' / '}
+            {win !== undefined ? `$${ruInt.format(win)}` : '—'}
+          </dd>
+        </div>
+      </dl>
+      <p className="text-[13px] text-muted">
+        Отправитель: {lot.shipperName || '—'} · {lot.shipperAddress || 'адрес не указан'}
+      </p>
+      <p className="text-[13px] text-muted">Готовность {lot.ready} · комментарий: {lot.comment}</p>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <Link to={`/app/importer/lots/${lot.id}`} className="rounded-lg bg-brand px-3 py-2 text-[13px] font-semibold text-white" onClick={onClose}>
+          Открыть полностью
+        </Link>
+        <Link to={`/app/importer/create?from=${lot.id}`} className="rounded-lg border border-line px-3 py-2 text-[13px]" onClick={onClose}>
+          Повторить
+        </Link>
+      </div>
     </div>
   )
 }
@@ -564,47 +679,68 @@ function LotTable({ items, now }: { items: AppLot[]; now: number }) {
   if (!items.length) {
     return <EmptyState title="Пусто" text="Нет строк." to="/app/importer/create" cta="Создать аукцион" />
   }
+
+  const columns: Col<AppLot>[] = [
+    { key: 'code', label: 'Код', get: (d) => d.code, className: 'font-mono' },
+    { key: 'title', label: 'Лот', get: (d) => d.title, cell: (d) => <span className="font-medium">{d.title}</span> },
+    { key: 'country', label: 'Страна', get: (d) => d.country },
+    { key: 'route', label: 'Маршрут', get: (d) => `${d.from} → ${d.to}` },
+    { key: 'cargo', label: 'Груз', get: (d) => d.cargo },
+    { key: 'hs', label: 'ТН ВЭД', get: (d) => d.hs || '—', className: 'font-mono' },
+    {
+      key: 'cbm',
+      label: 'м³',
+      get: (d) => d.cbm,
+      sortType: 'number',
+      cell: (d) => <span className="font-mono">{ruDec.format(d.cbm)}</span>,
+    },
+    {
+      key: 'kg',
+      label: 'кг',
+      get: (d) => d.kg,
+      sortType: 'number',
+      cell: (d) => <span className="font-mono">{ruInt.format(d.kg)}</span>,
+    },
+    { key: 'mode', label: 'Транспорт', get: (d) => d.mode },
+    { key: 'container', label: 'Загрузка', get: (d) => d.container },
+    { key: 'incoterm', label: 'Базис', get: (d) => d.incoterm, className: 'font-mono' },
+    {
+      key: 'value',
+      label: 'Груз $',
+      get: (d) => d.cargoValue,
+      sortType: 'number',
+      cell: (d) => <span className="font-mono">{d.cargoValue ? ruInt.format(d.cargoValue) : '0'}</span>,
+    },
+    { key: 'slot', label: 'Слот', get: (d) => slotLabel(d.startIso), cell: (d) => slotLabel(d.startIso) },
+    {
+      key: 'bidders',
+      label: 'n',
+      get: (d) => (d.bids.length ? uniqueBidders(d.bids) : 0),
+      sortType: 'number',
+    },
+    {
+      key: 'win',
+      label: 'Min $',
+      get: (d) => bestBid(d.bids) ?? -1,
+      sortType: 'number',
+      cell: (d) => {
+        const w = bestBid(d.bids)
+        return <span className="font-mono">{w !== undefined ? `$${ruInt.format(w)}` : '—'}</span>
+      },
+    },
+    { key: 'status', label: 'Статус', get: (d) => statusRu(lotStatus(d, now)) },
+  ]
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[720px] text-left text-[13px]">
-        <thead className="border-b border-line font-mono text-[10px] uppercase tracking-wide text-mist">
-          <tr>
-            <th className="py-2 pr-3">Лот</th>
-            <th className="py-2 pr-3">Маршрут</th>
-            <th className="py-2 pr-3">м³ / кг</th>
-            <th className="py-2 pr-3">Слот</th>
-            <th className="py-2 pr-3">Игроки</th>
-            <th className="py-2 pr-3">Ставка $</th>
-            <th className="py-2">Статус</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((d) => {
-            const st = lotStatus(d, now)
-            const win = bestBid(d.bids)
-            return (
-              <tr key={d.id} className="border-b border-line/80 last:border-0">
-                <td className="py-2.5 pr-3 font-medium">
-                  <Link to={`/app/importer/lots/${d.id}`} className="underline">
-                    {d.title}
-                  </Link>
-                </td>
-                <td className="py-2.5 pr-3">
-                  {d.from} → {d.to}
-                </td>
-                <td className="py-2.5 pr-3 font-mono">
-                  {ruDec.format(d.cbm)} / {ruInt.format(d.kg)}
-                </td>
-                <td className="py-2.5 pr-3">{slotLabel(d.startIso)}</td>
-                <td className="py-2.5 pr-3">{d.bids.length ? uniqueBidders(d.bids) : '—'}</td>
-                <td className="py-2.5 pr-3 font-mono">{win !== undefined ? `$${ruInt.format(win)}` : '—'}</td>
-                <td className="py-2.5">{statusRu(st)}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      rows={items}
+      columns={columns}
+      rowKey={(d) => d.id}
+      facetKey="country"
+      facetAllLabel="Все страны"
+      searchPlaceholder="Поиск: код, маршрут, ТН ВЭД, груз…"
+      renderDetail={(d, close) => <LotDetail lot={d} now={now} onClose={close} />}
+    />
   )
 }
 
@@ -619,12 +755,12 @@ function DraftList({
 }) {
   const now = useNow(2000)
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         <p className="mt-1 text-[13.5px] text-muted">{hint}</p>
       </div>
-      <div className="rounded-xl border border-line bg-white p-4">
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
         <LotTable items={items} now={now} />
       </div>
     </div>
@@ -687,36 +823,67 @@ export function ImporterFailed() {
 
 export function ImporterBids() {
   const { mine } = useMyLots()
-  const rows = mine
-    .flatMap((l) => l.bids.map((b) => ({ ...b, lotId: l.id, title: l.title })))
+  type BidRow = { id: string; lotId: string; title: string; amount: number; at: string; route: string; code: string }
+  const rows: BidRow[] = mine
+    .flatMap((l) =>
+      l.bids.map((b, i) => ({
+        id: `${l.id}-${i}-${b.at}`,
+        lotId: l.id,
+        title: l.title,
+        code: l.code,
+        route: `${l.from} → ${l.to}`,
+        amount: b.amount,
+        at: b.at,
+      })),
+    )
     .sort((a, b) => b.at.localeCompare(a.at))
+
+  const columns: Col<BidRow>[] = [
+    { key: 'code', label: 'Код', get: (r) => r.code, className: 'font-mono' },
+    { key: 'title', label: 'Лот', get: (r) => r.title },
+    { key: 'route', label: 'Маршрут', get: (r) => r.route },
+    {
+      key: 'amount',
+      label: 'USD',
+      get: (r) => r.amount,
+      sortType: 'number',
+      cell: (r) => <span className="font-mono">${ruInt.format(r.amount)}</span>,
+    },
+    {
+      key: 'at',
+      label: 'Когда',
+      get: (r) => r.at,
+      cell: (r) => <span className="text-muted">{r.at.replace('T', ' ').slice(0, 16)}</span>,
+    },
+  ]
+
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4">
       <h1 className="text-2xl font-semibold tracking-tight">Ставки по вашим лотам</h1>
-      <p className="text-[13.5px] text-muted">Слепые: видно сумму и время, не видно кто.</p>
-      <div className="overflow-x-auto rounded-xl border border-line bg-white">
-        <table className="w-full min-w-[560px] text-left text-[13px]">
-          <thead className="border-b border-line font-mono text-[10px] uppercase text-mist">
-            <tr>
-              <th className="px-4 py-2">Лот</th>
-              <th className="px-4 py-2">USD</th>
-              <th className="px-4 py-2">Когда</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((b, i) => (
-              <tr key={`${b.lotId}-${i}`} className="border-b border-line last:border-0">
-                <td className="px-4 py-2">
-                  <Link to={`/app/importer/lots/${b.lotId}`} className="underline">
-                    {b.title}
-                  </Link>
-                </td>
-                <td className="px-4 py-2 font-mono">${ruInt.format(b.amount)}</td>
-                <td className="px-4 py-2 text-muted">{b.at.replace('T', ' ').slice(0, 16)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <p className="text-[13.5px] text-muted">Слепые: видно сумму и время, не видно кто. Клик по строке — карточка лота.</p>
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
+        {rows.length === 0 ? (
+          <EmptyState title="Ставок ещё нет" text="Когда экспедиторы поставят — появятся здесь." to="/app/importer/current" cta="К текущим" />
+        ) : (
+          <DataTable
+            rows={rows}
+            columns={columns}
+            rowKey={(r) => r.id}
+            searchPlaceholder="Поиск по лоту, коду, маршруту…"
+            renderDetail={(r, close) => (
+              <div className="space-y-3 text-[13.5px]">
+                <p className="font-mono text-[11px] text-mist">{r.code}</p>
+                <h2 className="text-lg font-semibold">{r.title}</h2>
+                <p className="text-muted">{r.route}</p>
+                <p className="font-mono text-[18px] font-semibold">${ruInt.format(r.amount)}</p>
+                <p className="text-mist">{r.at.replace('T', ' ').slice(0, 16)}</p>
+                <Link to={`/app/importer/lots/${r.lotId}`} className="inline-flex rounded-lg bg-brand px-3 py-2 text-[13px] font-semibold text-white" onClick={close}>
+                  Открыть лот
+                </Link>
+              </div>
+            )}
+          />
+        )}
       </div>
     </div>
   )
@@ -873,7 +1040,7 @@ export function ImporterDirector() {
   const failed = mine.filter((d) => lotStatus(d, now) === 'failed')
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-6xl space-y-5">
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist">Кресло директора</p>
         <h1 className="mt-1 text-2xl font-semibold">Итоги часов</h1>
@@ -907,39 +1074,19 @@ export function ImporterDirector() {
           <p className="mt-2 text-[13px] text-muted">Пока пусто — собственник слепой.</p>
         )}
       </Panel>
-      <Panel title="Состоялись">
-        {held.length === 0 ? (
-          <p className="text-[13.5px] text-muted">Ещё нет часов с ≥2 ставками.</p>
-        ) : (
-          <table className="w-full text-left text-[13px]">
-            <thead className="font-mono text-[10px] uppercase text-mist">
-              <tr>
-                <th className="py-2">Маршрут</th>
-                <th className="py-2">Min $</th>
-                <th className="py-2">n</th>
-              </tr>
-            </thead>
-            <tbody>
-              {held.map((d) => (
-                <tr key={d.id} className="border-t border-line">
-                  <td className="py-2">
-                    <Link to={`/app/importer/lots/${d.id}`} className="underline">
-                      {d.from} → {d.to}
-                    </Link>
-                    <span className="ml-2 text-mist">{d.cbm} м³</span>
-                  </td>
-                  <td className="py-2 font-mono">${ruInt.format(bestBid(d.bids) ?? 0)}</td>
-                  <td className="py-2 font-mono">{uniqueBidders(d.bids)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Panel>
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
+        <p className="border-b border-line px-4 py-3 text-[15px] font-semibold">Состоялись</p>
+        <LotTable items={held} now={now} />
+      </div>
       <Panel title="Не состоялись">
         <p className="text-[13.5px] text-muted">
           Пустых слотов: {failed.length}. Это тоже факт для директора — иначе логист скажет «площадка мёртвая».
         </p>
+        {failed.length ? (
+          <div className="mt-3 overflow-hidden rounded-lg border border-line">
+            <LotTable items={failed} now={now} />
+          </div>
+        ) : null}
       </Panel>
     </div>
   )
