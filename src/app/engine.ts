@@ -244,6 +244,17 @@ export function slotLabel(iso: string) {
   return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+/** Понедельник недели слота как «дд.мм» — совпадает с подписями графика недель. */
+export function weekLabelFromIso(iso: string) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  const mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(mon.getDate())}.${pad(mon.getMonth() + 1)}`
+}
+
 export function parseSlot(date: string, time: string, durationMin = 60) {
   const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(date.trim())
   const t = /^(\d{1,2}):(\d{2})$/.exec(time.trim())

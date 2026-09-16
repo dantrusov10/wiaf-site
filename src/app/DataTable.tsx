@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, Search, X } from 'lucide-react'
-import { useMemo, useState, type ReactNode } from 'react'
+import { ArrowDown, ArrowUp, ArrowUpDown, Filter, Search, X } from 'lucide-react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 export type Col<T> = {
   key: string
@@ -11,6 +11,7 @@ export type Col<T> = {
   /** ширина / mono */
   className?: string
   sortType?: 'string' | 'number'
+  /** false = не показывать в раскрытой панели фильтров */
   filterable?: boolean
 }
 
@@ -25,6 +26,10 @@ type Props<T> = {
   /** доп. фильтры-кнопки: значение → label */
   facetKey?: string
   facetAllLabel?: string
+  /** стартовые значения фильтров (например из ?week=) */
+  initialFilters?: Record<string, string>
+  /** открыть панель фильтров сразу */
+  initialFiltersOpen?: boolean
 }
 
 function cmp(a: string | number | null | undefined, b: string | number | null | undefined, type: 'string' | 'number') {
@@ -44,13 +49,27 @@ export function DataTable<T>({
   searchPlaceholder = 'Поиск по ключевым словам…',
   facetKey,
   facetAllLabel = 'Все',
+  initialFilters,
+  initialFiltersOpen,
 }: Props<T>) {
   const [q, setQ] = useState('')
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [facet, setFacet] = useState<string>('__all__')
-  const [filters, setFilters] = useState<Record<string, string>>({})
+  const [filters, setFilters] = useState<Record<string, string>>(() => ({ ...(initialFilters ?? {}) }))
+  const [filtersOpen, setFiltersOpen] = useState(() =>
+    Boolean(initialFiltersOpen || (initialFilters && Object.values(initialFilters).some((v) => v.trim()))),
+  )
   const [selected, setSelected] = useState<string | null>(null)
+
+  // синхронизация при смене query (drill-down с главной ЛК)
+  const initKey = JSON.stringify(initialFilters ?? {})
+  useEffect(() => {
+    if (!initialFilters) return
+    setFilters((prev) => ({ ...prev, ...initialFilters }))
+    if (Object.values(initialFilters).some((v) => v.trim())) setFiltersOpen(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initKey отражает содержимое
+  }, [initKey])
 
   const facetCol = facetKey ? columns.find((c) => c.key === facetKey) : undefined
   const facetValues = useMemo(() => {
@@ -63,7 +82,8 @@ export function DataTable<T>({
     return [...set].sort((a, b) => a.localeCompare(b, 'ru'))
   }, [rows, facetCol])
 
-  const filterableCols = columns.filter((c) => c.filterable !== false).slice(0, 4)
+  const filterableCols = columns.filter((c) => c.filterable !== false)
+  const activeFilterCount = Object.values(filters).filter((v) => v.trim()).length
 
   const filtered = useMemo(() => {
     const tokens = q
@@ -85,7 +105,10 @@ export function DataTable<T>({
     }
     if (tokens.length) {
       list = list.filter((r) => {
-        const hay = columns.map((c) => String(c.get(r) ?? '')).join(' · ').toLowerCase()
+        const hay = columns
+          .map((c) => String(c.get(r) ?? ''))
+          .join(' · ')
+          .toLowerCase()
         return tokens.every((t) => hay.includes(t))
       })
     }
@@ -102,7 +125,7 @@ export function DataTable<T>({
     return list
   }, [rows, columns, q, sortKey, sortDir, facet, facetCol, filters])
 
-  const selectedRow = selected ? filtered.find((r) => rowKey(r) === selected) ?? rows.find((r) => rowKey(r) === selected) : null
+  const selectedRow = selected ? (filtered.find((r) => rowKey(r) === selected) ?? rows.find((r) => rowKey(r) === selected)) : null
 
   const toggleSort = (key: string) => {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -110,6 +133,12 @@ export function DataTable<T>({
       setSortKey(key)
       setSortDir('asc')
     }
+  }
+
+  const clearFilters = () => {
+    setFilters({})
+    setFacet('__all__')
+    setQ('')
   }
 
   if (!rows.length) {
@@ -120,20 +149,43 @@ export function DataTable<T>({
     <div className={`flex min-h-[28rem] gap-0 ${selectedRow && renderDetail ? 'lg:gap-0' : ''}`}>
       <div className={`min-w-0 flex-1 transition-[flex-basis] duration-300 ${selectedRow && renderDetail ? 'lg:basis-1/2 lg:max-w-[50%]' : 'basis-full'}`}>
         <div className="border-b border-line bg-fog/40 px-3 py-2.5">
-          <label className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2">
-            <Search className="size-4 shrink-0 text-mist" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="w-full bg-transparent text-[13.5px] outline-none"
-            />
-            {q ? (
-              <button type="button" className="text-mist hover:text-ink" onClick={() => setQ('')} aria-label="Очистить">
-                <X className="size-3.5" />
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex min-w-[12rem] flex-1 items-center gap-2 rounded-lg border border-line bg-white px-3 py-2">
+              <Search className="size-4 shrink-0 text-mist" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full bg-transparent text-[13.5px] outline-none"
+              />
+              {q ? (
+                <button type="button" className="text-mist hover:text-ink" onClick={() => setQ('')} aria-label="Очистить">
+                  <X className="size-3.5" />
+                </button>
+              ) : null}
+            </label>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((o) => !o)}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[13px] font-semibold transition ${
+                filtersOpen || activeFilterCount
+                  ? 'border-brand bg-brand/10 text-brand'
+                  : 'border-line bg-white text-ink hover:border-brand'
+              }`}
+            >
+              <Filter className="size-3.5" />
+              Фильтр
+              {activeFilterCount ? (
+                <span className="rounded-full bg-brand px-1.5 py-0.5 font-mono text-[10px] text-white">{activeFilterCount}</span>
+              ) : null}
+            </button>
+            {activeFilterCount || q || facet !== '__all__' ? (
+              <button type="button" onClick={clearFilters} className="text-[12px] text-mist underline hover:text-ink">
+                Сбросить
               </button>
             ) : null}
-          </label>
+          </div>
+
           {facetCol ? (
             <div className="mt-2 flex flex-wrap gap-1">
               <button
@@ -155,21 +207,28 @@ export function DataTable<T>({
               ))}
             </div>
           ) : null}
-          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {filterableCols.map((c) => (
-              <input
-                key={c.key}
-                value={filters[c.key] ?? ''}
-                onChange={(e) => setFilters((f) => ({ ...f, [c.key]: e.target.value }))}
-                placeholder={`Фильтр: ${c.label}`}
-                className="rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-brand"
-              />
-            ))}
-          </div>
+
+          {filtersOpen ? (
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filterableCols.map((c) => (
+                <label key={c.key} className="block">
+                  <span className="mb-0.5 block font-mono text-[10px] uppercase tracking-wide text-mist">{c.label}</span>
+                  <input
+                    value={filters[c.key] ?? ''}
+                    onChange={(e) => setFilters((f) => ({ ...f, [c.key]: e.target.value }))}
+                    placeholder={`Фильтр: ${c.label}`}
+                    className="w-full rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-brand"
+                  />
+                </label>
+              ))}
+            </div>
+          ) : null}
+
           <p className="mt-2 font-mono text-[11px] text-mist">
             {filtered.length} из {rows.length}
             {q ? ` · «${q}»` : ''}
             {facet !== '__all__' ? ` · ${facet}` : ''}
+            {activeFilterCount ? ` · фильтров: ${activeFilterCount}` : ''}
           </p>
         </div>
 
@@ -184,7 +243,11 @@ export function DataTable<T>({
                       <button type="button" className="inline-flex items-center gap-1 hover:text-ink" onClick={() => toggleSort(c.key)}>
                         {c.label}
                         {active ? (
-                          sortDir === 'asc' ? <ArrowUp className="size-3 text-brand" /> : <ArrowDown className="size-3 text-brand" />
+                          sortDir === 'asc' ? (
+                            <ArrowUp className="size-3 text-brand" />
+                          ) : (
+                            <ArrowDown className="size-3 text-brand" />
+                          )
                         ) : (
                           <ArrowUpDown className="size-3 opacity-40" />
                         )}

@@ -1,5 +1,5 @@
-﻿import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+﻿import { useMemo, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { excludedNotes, includedChecks } from '../content/included'
 import { forwarderWeek } from '../demo/seed'
 import { formatWhen, loadLabel, modeLabel, ruDec, ruInt } from '../data'
@@ -18,6 +18,7 @@ import {
   slotLabel,
   statusRu,
   uniqueBidders,
+  weekLabelFromIso,
   winnerId,
   type AppLot,
 } from './engine'
@@ -37,11 +38,17 @@ type DealRow = {
   kg: number
   mode: string
   container: string
+  hs: string
+  incoterm: string
+  insurance: string
+  customs: string
+  cargoValue: number
   myBid: number
   winBid: number
   bidders: number
   status: 'won' | 'lost' | 'archive'
   slot: string
+  week: string
 }
 
 function dealsOf(userId: string, lots: AppLot[], now: number): DealRow[] {
@@ -68,11 +75,17 @@ function dealsOf(userId: string, lots: AppLot[], now: number): DealRow[] {
       kg: l.kg,
       mode: l.mode,
       container: l.container,
+      hs: l.hs || '—',
+      incoterm: l.incoterm,
+      insurance: l.insurance ? 'да' : 'нет',
+      customs: l.customs ? 'да' : 'нет',
+      cargoValue: l.cargoValue,
       myBid,
       winBid: win,
       bidders: uniqueBidders(l.bids),
       status,
       slot: slotLabel(l.startIso),
+      week: weekLabelFromIso(l.startIso),
     })
   }
   return out
@@ -121,6 +134,7 @@ function LotCard({ lot, now }: { lot: AppLot; now: number }) {
 }
 
 export function ForwarderHome() {
+  const navigate = useNavigate()
   const { user, lots, resetDemo, setSubscribed } = useSession()
   const now = useNow(2000)
   const deals = user ? dealsOf(user.id, lots, now) : []
@@ -250,7 +264,14 @@ export function ForwarderHome() {
       </div>
 
       <Panel title="Ставки и победы по неделям">
-        <Bars a={forwarderWeek.map((w) => w.bids)} b={forwarderWeek.map((w) => w.won)} labels={forwarderWeek.map((w) => w.w)} />
+        <Bars
+          a={forwarderWeek.map((w) => w.bids)}
+          b={forwarderWeek.map((w) => w.won)}
+          labels={forwarderWeek.map((w) => w.w)}
+          aLabel="ставки"
+          bLabel="победы"
+          onBarClick={(_i, label) => navigate(`/app/forwarder/won?week=${encodeURIComponent(label)}`)}
+        />
       </Panel>
 
       <div className="flex justify-end">
@@ -262,19 +283,32 @@ export function ForwarderHome() {
   )
 }
 
-function DealTable({ items }: { items: DealRow[] }) {
+function DealTable({ items, initialFilters }: { items: DealRow[]; initialFilters?: Record<string, string> }) {
   if (!items.length) {
     return <p className="px-4 py-8 text-center text-[13.5px] text-muted">Пока нет закрытых слотов с вашей ставкой.</p>
   }
 
   const columns: Col<DealRow>[] = [
     { key: 'code', label: 'Код', get: (d) => d.code, className: 'font-mono' },
+    { key: 'week', label: 'Неделя', get: (d) => d.week, className: 'font-mono' },
     { key: 'country', label: 'Страна', get: (d) => d.country },
     { key: 'route', label: 'Маршрут', get: (d) => `${d.from} → ${d.to}` },
     { key: 'cargo', label: 'Груз', get: (d) => d.cargo },
+    { key: 'hs', label: 'ТН ВЭД', get: (d) => d.hs, className: 'font-mono' },
     { key: 'cbm', label: 'м³', get: (d) => d.cbm, sortType: 'number', cell: (d) => <span className="font-mono">{ruDec.format(d.cbm)}</span> },
+    { key: 'kg', label: 'кг', get: (d) => d.kg, sortType: 'number', cell: (d) => <span className="font-mono">{ruInt.format(d.kg)}</span> },
     { key: 'mode', label: 'Транспорт', get: (d) => d.mode },
     { key: 'container', label: 'Загрузка', get: (d) => d.container },
+    { key: 'incoterm', label: 'Базис', get: (d) => d.incoterm, className: 'font-mono' },
+    { key: 'insurance', label: 'Страховка', get: (d) => d.insurance },
+    { key: 'customs', label: 'ТО', get: (d) => d.customs },
+    {
+      key: 'value',
+      label: 'Груз $',
+      get: (d) => d.cargoValue,
+      sortType: 'number',
+      cell: (d) => <span className="font-mono">{d.cargoValue ? ruInt.format(d.cargoValue) : '0'}</span>,
+    },
     { key: 'my', label: 'Моя $', get: (d) => d.myBid, sortType: 'number', cell: (d) => <span className="font-mono">${ruInt.format(d.myBid)}</span> },
     { key: 'win', label: 'Победа $', get: (d) => d.winBid, sortType: 'number', cell: (d) => <span className="font-mono">${ruInt.format(d.winBid)}</span> },
     { key: 'n', label: 'n', get: (d) => d.bidders, sortType: 'number' },
@@ -293,11 +327,12 @@ function DealTable({ items }: { items: DealRow[] }) {
       rowKey={(d) => d.id}
       facetKey="country"
       facetAllLabel="Все страны"
-      searchPlaceholder="Поиск: код, маршрут, груз…"
+      searchPlaceholder="Поиск: код, маршрут, груз, ТН ВЭД…"
+      initialFilters={initialFilters}
       renderDetail={(d, close) => (
         <div className="space-y-3 text-[13.5px]">
           <p className="font-mono text-[11px] text-mist">
-            {d.code} · {d.status === 'won' ? 'выиграли' : d.status === 'lost' ? 'ниже победы' : 'архив'}
+            {d.code} · {d.status === 'won' ? 'выиграли' : d.status === 'lost' ? 'ниже победы' : 'архив'} · неделя {d.week}
           </p>
           <h2 className="text-lg font-semibold">
             {d.from} → {d.to}
@@ -315,6 +350,12 @@ function DealTable({ items }: { items: DealRow[] }) {
             <div>
               <dt className="text-mist">Транспорт</dt>
               <dd className="font-sans">{d.mode}</dd>
+            </div>
+            <div>
+              <dt className="text-mist">Базис / страховка</dt>
+              <dd className="font-sans">
+                {d.incoterm} · {d.insurance}
+              </dd>
             </div>
             <div>
               <dt className="text-mist">Моя ставка</dt>
@@ -339,6 +380,39 @@ function DealTable({ items }: { items: DealRow[] }) {
         </div>
       )}
     />
+  )
+}
+
+function DealList({
+  title,
+  hint,
+  items,
+}: {
+  title: string
+  hint: string
+  items: DealRow[]
+}) {
+  const [params] = useSearchParams()
+  const week = params.get('week')?.trim() ?? ''
+  const initialFilters = useMemo(() => (week ? { week } : undefined), [week])
+  return (
+    <div className="mx-auto max-w-6xl space-y-4">
+      <div>
+        <h1 className="text-2xl font-semibold">{title}</h1>
+        <p className="mt-1 text-[13.5px] text-muted">
+          {hint}
+          {week ? (
+            <>
+              {' '}
+              · неделя <span className="font-mono text-ink">{week}</span>
+            </>
+          ) : null}
+        </p>
+      </div>
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
+        <DealTable items={items} initialFilters={initialFilters} />
+      </div>
+    </div>
   )
 }
 
@@ -428,12 +502,11 @@ export function ForwarderWon() {
   const now = useNow(2000)
   const deals = user ? dealsOf(user.id, lots, now) : []
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
-      <h1 className="text-2xl font-semibold">Выигранные</h1>
-      <div className="overflow-hidden rounded-xl border border-line bg-white">
-        <DealTable items={deals.filter((d) => d.status === 'won')} />
-      </div>
-    </div>
+    <DealList
+      title="Выигранные"
+      hint="Победы по вашим ставкам. Кнопка «Фильтр» — по всем полям."
+      items={deals.filter((d) => d.status === 'won')}
+    />
   )
 }
 
@@ -442,12 +515,11 @@ export function ForwarderLost() {
   const now = useNow(2000)
   const deals = user ? dealsOf(user.id, lots, now) : []
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
-      <h1 className="text-2xl font-semibold">Проигранные</h1>
-      <div className="overflow-hidden rounded-xl border border-line bg-white">
-        <DealTable items={deals.filter((d) => d.status === 'lost')} />
-      </div>
-    </div>
+    <DealList
+      title="Проигранные"
+      hint="Сыграли, но победа у другого. Кнопка «Фильтр» — по всем полям."
+      items={deals.filter((d) => d.status === 'lost')}
+    />
   )
 }
 
@@ -456,12 +528,11 @@ export function ForwarderArchive() {
   const now = useNow(2000)
   const deals = user ? dealsOf(user.id, lots, now) : []
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
-      <h1 className="text-2xl font-semibold">Архив</h1>
-      <div className="overflow-hidden rounded-xl border border-line bg-white">
-        <DealTable items={deals.filter((d) => d.status === 'archive')} />
-      </div>
-    </div>
+    <DealList
+      title="Архив"
+      hint="Закрытые слоты с вашей ставкой. Кнопка «Фильтр» — по всем полям."
+      items={deals.filter((d) => d.status === 'archive')}
+    />
   )
 }
 

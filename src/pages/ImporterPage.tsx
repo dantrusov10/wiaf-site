@@ -36,7 +36,7 @@ export function ImporterPage() {
           </Link>
         </div>
       </div>
-      <PageLeadCta variant="director" />
+      <PageLeadCta variant="importer" />
     </main>
   )
 }

@@ -11,7 +11,7 @@ import {
 import { ArticleCover, ThemeIcon } from '../components/ThemeIcon'
 import { RatesStrip } from '../components/RatesStrip'
 import { Magnetic } from '../components/Motion'
-import { PageLeadCta } from '../components/LeadMagnet'
+import { InlineTryMagnet, PageLeadCta } from '../components/LeadMagnet'
 import { ArticleComments } from '../components/ArticleComments'
 
 export function ArticlesPage() {
@@ -107,7 +107,7 @@ export function ArticlesPage() {
           </div>
         </aside>
       </div>
-      <PageLeadCta variant="director" />
+      <PageLeadCta variant="try" />
     </main>
   )
 }
@@ -150,10 +150,14 @@ export function ArticlePage() {
         </div>
         <p className="mt-6 text-[17px] text-muted">{one.dek}</p>
         <div className="mt-8 space-y-4 text-[16px] leading-relaxed text-ink">
-          {one.body.map((p) => (
-            <p key={p.slice(0, 32)}>{p}</p>
+          {one.body.map((p, i) => (
+            <div key={p.slice(0, 32)}>
+              <p>{p}</p>
+              {i === 1 ? <InlineTryMagnet /> : null}
+            </div>
           ))}
         </div>
+        <InlineTryMagnet />
         <div className="mt-10 flex flex-wrap gap-2">
           {one.tags.map((t) => (
             <span key={t} className="rounded-full bg-fog px-3 py-1 text-[12px] text-muted">
@@ -166,7 +170,7 @@ export function ArticlePage() {
         </Link>
         <ArticleComments slug={one.slug} />
       </div>
-      <PageLeadCta variant="article" />
+      <PageLeadCta variant="try" />
     </main>
   )
 }

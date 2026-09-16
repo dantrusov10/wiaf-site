@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { DirectorLeadForm, PageLeadCta } from '../components/LeadMagnet'
+import { PageLeadCta, TryCtaButtons } from '../components/LeadMagnet'
 import { PageHero } from '../components/PageHero'
 
 export function DirectorPage() {
@@ -8,20 +8,21 @@ export function DirectorPage() {
       <PageHero
         kicker="Директору"
         title="Сводка часов, сравнение с рынком и автоотчёты"
-        dek="В ЛК — режим «смотреть как директор»: аналитика, журнал действий, команда и автоотчёты. Регистрация бесплатная. Комиссия с победителя 1%, не более 5 000 ₽."
+        dek="В ЛК — режим «смотреть как директор»: аналитика, журнал действий, команда и автоотчёты. Регистрация бесплатная. Комиссия с победителя 1%."
       />
       <div className="mx-auto max-w-6xl px-5 py-12">
         <div className="grid gap-6 lg:grid-cols-2">
           <article className="rounded-xl border border-line bg-white p-6">
-            <h2 className="text-lg font-semibold">Что в кабинете и в письме</h2>
+            <h2 className="text-lg font-semibold">Что увидит директор</h2>
             <ul className="mt-4 space-y-2 text-[14px] leading-relaxed text-muted">
               <li>Сыгранные конкурсы: плечо, объём, игроки, победа.</li>
               <li>Условия лота (Incoterm, страховка, что входит в ставку).</li>
               <li>Сравнение с полосой «как обычно играют» похожие аукционы.</li>
-              <li>Автоотправка на почту директора после каждого состоявшегося часа — или сводка вручную.</li>
+              <li>Журнал действий команды и автоотчёты после часа.</li>
             </ul>
             <div className="mt-6">
-              <DirectorLeadForm />
+              <p className="mb-3 text-[13.5px] text-muted">Зарегистрируйтесь и откройте кабинет — режим «Смотреть как» в шапке.</p>
+              <TryCtaButtons />
             </div>
           </article>
           <article className="rounded-xl border border-line bg-white p-6">
@@ -31,20 +32,20 @@ export function DirectorPage() {
               сотрудник). Меню и доступ меняются целиком. Подписка на инструменты — в режиме операционки.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <Link to="/app/login?role=importer" className="inline-flex rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
-                Войти как заказчик
+              <Link to="/app/register?role=importer" className="inline-flex rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
+                Попробовать как заказчик
+              </Link>
+              <Link to="/app/login?role=importer" className="inline-flex rounded-lg border border-line px-4 py-2.5 text-[13px] font-medium">
+                Уже есть аккаунт
               </Link>
               <Link to="/articles" className="inline-flex rounded-lg border border-line px-4 py-2.5 text-[13px] font-medium">
                 Статьи
-              </Link>
-              <Link to="/rates" className="inline-flex rounded-lg border border-line px-4 py-2.5 text-[13px] font-medium">
-                Курсы ЦБ
               </Link>
             </div>
           </article>
         </div>
       </div>
-      <PageLeadCta variant="importer" />
+      <PageLeadCta variant="try" />
     </main>
   )
 }

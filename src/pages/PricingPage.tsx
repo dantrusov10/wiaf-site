@@ -61,6 +61,19 @@ function PlanHeroCard({ plan, accent }: { plan: PlanHero; accent: 'brand' | 'bra
         </div>
       </dl>
       <p className="mt-auto pt-5 text-[12px] text-mist">{plan.cta} · оплата после пилота</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link
+          to={`/app/register?role=${accent === 'brand' ? 'importer' : 'forwarder'}`}
+          className={`inline-flex rounded-lg px-3.5 py-2 text-[13px] font-semibold ${
+            accent === 'brand' ? 'bg-brand text-white hover:bg-navy-2' : 'bg-navy text-white hover:bg-navy-2'
+          }`}
+        >
+          Попробовать
+        </Link>
+        <Link to="/app/login" className="inline-flex rounded-lg border border-line px-3.5 py-2 text-[13px] font-semibold text-ink hover:border-brand">
+          Войти
+        </Link>
+      </div>
     </article>
   )
 }

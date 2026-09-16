@@ -48,6 +48,20 @@ export function DirectorLeadForm({ compact = false }: { compact?: boolean }) {
   )
 }
 
+/** Универсальный CTA «зарегистрироваться и попробовать». */
+export function TryCtaButtons({ className = '' }: { className?: string }) {
+  return (
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      <Link to="/app/register?role=importer" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-navy-2">
+        Попробовать как заказчик
+      </Link>
+      <Link to="/app/register?role=forwarder" className="rounded-lg border border-line bg-white px-4 py-2.5 text-[13px] font-semibold text-ink hover:border-brand">
+        Попробовать как исполнитель
+      </Link>
+    </div>
+  )
+}
+
 export function HomeLeadStrip() {
   return (
     <section className="border-t border-line bg-white">
@@ -65,134 +79,95 @@ export function HomeLeadStrip() {
           </Magnetic>
         </article>
         <article className="lift-card rounded-lg border border-line bg-paper p-5">
-          <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Директору</p>
-          <h2 className="mt-1 text-xl font-semibold">Письма с итогами часов</h2>
+          <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Попробовать</p>
+          <h2 className="mt-1 text-xl font-semibold">Регистрация бесплатна</h2>
           <p className="mt-2 text-[14px] leading-relaxed text-muted">
-            Факт цены после часа — без входа в кабинет логиста.
+            Заказчик выкладывает слот без абонентки. Исполнитель активирует счёт от 1 000 ₽.
           </p>
           <div className="mt-4">
-            <DirectorLeadForm />
+            <TryCtaButtons />
           </div>
-          <Link to="/director" className="mt-3 inline-block text-[13px] font-medium underline underline-offset-4">
-            Как устроено кресло директора
-          </Link>
         </article>
       </div>
     </section>
   )
 }
 
-/** Явный лидмагнит-блок для страниц сайта. */
+/** Явный лидмагнит-блок: регистрация / попробовать. */
 export function PageLeadCta({
-  variant = 'guide',
+  variant = 'try',
 }: {
-  variant?: 'guide' | 'director' | 'pricing' | 'forwarder' | 'importer' | 'article'
+  variant?: 'guide' | 'director' | 'pricing' | 'forwarder' | 'importer' | 'article' | 'try' | 'how'
 }) {
-  if (variant === 'director' || variant === 'article') {
-    return (
-      <section className="border-t border-line bg-fog/60">
-        <div className="mx-auto max-w-6xl px-5 py-12">
-          <div className="rounded-2xl border border-line bg-white p-6 shadow-sm md:grid md:grid-cols-[1.1fr_0.9fr] md:items-end md:gap-8 md:p-8">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Лидмагнит · директору</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight">Итоги часа на почту</h2>
-              <p className="mt-2 max-w-md text-[14.5px] text-muted">
-                Собственник не сидит в ЛК. После состоявшегося слота — вилка и условия, без обязанности взять победителя.
-              </p>
-              <Link to="/director" className="mt-3 inline-block text-[13px] font-semibold text-brand underline">
-                Как устроено →
-              </Link>
-            </div>
-            <div className="mt-5 md:mt-0">
-              <DirectorLeadForm />
-            </div>
-          </div>
-        </div>
-      </section>
-    )
-  }
   if (variant === 'pricing') {
     return (
       <section className="border-t border-line bg-navy text-paper">
         <div className="mx-auto max-w-6xl px-5 py-12">
-          <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-wide text-brand-2">Лидмагнит · тарифы</p>
-              <h2 className="mt-1 text-2xl font-semibold">Free = торг. Инструменты — в подписке</h2>
-              <p className="mt-2 max-w-xl text-[14.5px] text-fog">
-                Аукцион не запираем. Журнал, КП и умные подсказки открываются с «Закупки» / «Стола». Пилот — после регистрации.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link to="/app/register?role=importer" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
-                Заказчик · регистрация
-              </Link>
-              <Link to="/app/register?role=forwarder" className="rounded-lg border border-white/30 px-4 py-2.5 text-[13px] font-semibold text-white">
-                Исполнитель
-              </Link>
-            </div>
-          </div>
-          <div className="mt-8 rounded-xl border border-white/15 bg-white/5 p-5">
-            <p className="mb-3 text-[14px] text-fog">Или итоги часов директору — без входа в ЛК:</p>
-            <DirectorLeadForm compact />
+          <p className="font-mono text-[10px] uppercase tracking-wide text-brand-2">Лидмагнит · тарифы</p>
+          <h2 className="mt-1 text-2xl font-semibold">Попробуйте Free — без оплаты за вход</h2>
+          <p className="mt-2 max-w-2xl text-[14.5px] text-fog">
+            Аукцион не запираем подпиской. Зарегистрируйтесь и проведите первый час: заказчик — бесплатно, исполнитель — счёт от 1 000 ₽.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Link to="/app/register?role=importer" className="rounded-lg bg-brand px-5 py-3 text-[13px] font-semibold text-white">
+              Попробовать как заказчик
+            </Link>
+            <Link to="/app/register?role=forwarder" className="rounded-lg border border-white/35 px-5 py-3 text-[13px] font-semibold text-white">
+              Попробовать как исполнитель
+            </Link>
+            <Link to="/app/login" className="rounded-lg px-5 py-3 text-[13px] font-semibold text-fog underline">
+              Уже есть аккаунт
+            </Link>
           </div>
         </div>
       </section>
     )
   }
+
   if (variant === 'forwarder') {
     return (
       <section className="border-t border-line bg-fog/50">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-12">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Лидмагнит · исполнителю</p>
-            <h2 className="mt-1 text-2xl font-semibold">Стол + маржа + подсказки</h2>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Лидмагнит</p>
+            <h2 className="mt-1 text-2xl font-semibold">Зарегистрируйтесь и зайдите в ленту</h2>
             <p className="mt-2 text-[14.5px] text-muted">Регистрация бесплатна. Ставки — при балансе от 1 000 ₽.</p>
           </div>
-          <Link to="/app/register?role=forwarder" className="rounded-lg bg-navy px-5 py-3 text-[13px] font-semibold text-white">
-            Стать исполнителем
-          </Link>
+          <TryCtaButtons />
         </div>
       </section>
     )
   }
+
   if (variant === 'importer') {
     return (
       <section className="border-t border-line bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-12">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Лидмагнит · заказчику</p>
-            <h2 className="mt-1 text-2xl font-semibold">Первый лот — бесплатно</h2>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Лидмагнит</p>
+            <h2 className="mt-1 text-2xl font-semibold">Выложите первый лот бесплатно</h2>
             <p className="mt-2 text-[14.5px] text-muted">Час на понижение. Победитель = минимум. Договор — сами.</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link to="/app/register?role=importer" className="rounded-lg bg-brand px-5 py-3 text-[13px] font-semibold text-white">
-              Создать аккаунт
-            </Link>
-            <Link to="/guide" className="rounded-lg border border-line px-5 py-3 text-[13px] font-semibold">
-              Гид за 10 минут
-            </Link>
-          </div>
+          <TryCtaButtons />
         </div>
       </section>
     )
   }
+
+  // guide / how / article / try / director → единый блок «попробовать»
   return (
     <section className="border-t border-line bg-fog/50">
       <div className="mx-auto max-w-6xl px-5 py-12">
-        <div className="rounded-2xl border border-line bg-white p-6 md:flex md:items-center md:justify-between md:gap-8 md:p-8">
+        <div className="rounded-2xl border border-line bg-white p-6 shadow-sm md:flex md:items-center md:justify-between md:gap-8 md:p-8">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Лидмагнит · гид</p>
-            <h2 className="mt-1 text-2xl font-semibold">Не знаете с чего начать?</h2>
-            <p className="mt-2 max-w-lg text-[14.5px] text-muted">Короткий сценарий первого лота — около 10 минут.</p>
+            <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Лидмагнит</p>
+            <h2 className="mt-1 text-2xl font-semibold">Зарегистрируйтесь и попробуйте площадку</h2>
+            <p className="mt-2 max-w-lg text-[14.5px] text-muted">
+              Free для торга. Инструменты — по желанию. Без холодных звонков и «входа в базу».
+            </p>
           </div>
-          <div className="mt-5 flex flex-wrap gap-2 md:mt-0">
-            <Link to="/guide" className="rounded-lg bg-brand px-5 py-3 text-[13px] font-semibold text-white">
-              Открыть гид
-            </Link>
-            <Link to="/director" className="rounded-lg border border-line px-5 py-3 text-[13px] font-semibold">
-              Директору
-            </Link>
+          <div className="mt-5 md:mt-0">
+            <TryCtaButtons />
           </div>
         </div>
       </div>
@@ -200,31 +175,41 @@ export function PageLeadCta({
   )
 }
 
-/** Крупный блок в подвале сайта. */
+/** Компактный лидмагнит внутри статьи / узкой колонки. */
+export function InlineTryMagnet() {
+  return (
+    <aside className="my-10 rounded-2xl border-2 border-brand bg-white p-5 shadow-sm md:p-6">
+      <p className="font-mono text-[10px] uppercase tracking-wide text-brand">Лидмагнит · попробовать</p>
+      <h3 className="mt-1 text-lg font-semibold text-ink">Зарегистрируйтесь и проведите первый час</h3>
+      <p className="mt-2 text-[14px] text-muted">
+        Free для торга. Заказчик выкладывает условия — исполнители снижают ставку час. Комиссия только с победы.
+      </p>
+      <TryCtaButtons className="mt-4" />
+    </aside>
+  )
+}
+
+/** Подвал: привлечение зарегистрироваться, не письмо директору. */
 export function FooterLeadStrip() {
   return (
     <div className="border-b border-white/10 bg-navy-2/50">
       <div className="mx-auto max-w-6xl px-5 py-8">
-        <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-end">
+        <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-wide text-brand-2">Подвал · лидмагнит</p>
-            <h2 className="mt-1 text-xl font-semibold text-white">Итоги часов директору + быстрый вход</h2>
-            <p className="mt-2 text-[13.5px] text-fog">
-              Письмо после состоявшегося слота · гид первого лота · тарифы Free / подписка
+            <h2 className="mt-1 text-xl font-semibold text-white">Зарегистрируйтесь и попробуйте</h2>
+            <p className="mt-2 max-w-xl text-[13.5px] text-fog">
+              Бесплатный аккаунт заказчика или исполнителя. Первый час — без абонентки за сам торг.
             </p>
-            <div className="mt-3 flex flex-wrap gap-3 text-[13px]">
-              <Link to="/guide" className="underline hover:text-white">
-                Гид
-              </Link>
-              <Link to="/pricing" className="underline hover:text-white">
-                Тарифы
-              </Link>
-              <Link to="/director" className="underline hover:text-white">
-                Как устроено
-              </Link>
-            </div>
           </div>
-          <DirectorLeadForm compact />
+          <div className="flex flex-wrap gap-2">
+            <Link to="/app/register?role=importer" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
+              Попробовать как заказчик
+            </Link>
+            <Link to="/app/register?role=forwarder" className="rounded-lg border border-white/30 px-4 py-2.5 text-[13px] font-semibold text-white">
+              Попробовать как исполнитель
+            </Link>
+          </div>
         </div>
       </div>
     </div>

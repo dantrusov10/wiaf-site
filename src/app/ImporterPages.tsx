@@ -13,6 +13,7 @@ import {
   slotLabel,
   statusRu,
   uniqueBidders,
+  weekLabelFromIso,
   type AppLot,
 } from './engine'
 import { Bars, Stat } from './charts'
@@ -80,6 +81,7 @@ function parseDd(s: string) {
 
 export function ImporterHome() {
   const { user, lots, resetDemo } = useSession()
+  const navigate = useNavigate()
   const now = useNow(2000)
   const mine = lots.filter((d) => d.ownerId === user?.id)
   const work = mine.filter((d) => !d.archived)
@@ -159,7 +161,12 @@ export function ImporterHome() {
           )}
         </Panel>
         <Panel title="Слоты по неделям">
-          <Bars a={importerWeek.map((w) => w.lots)} b={importerWeek.map((w) => w.held)} labels={importerWeek.map((w) => w.w)} />
+          <Bars
+            a={importerWeek.map((w) => w.lots)}
+            b={importerWeek.map((w) => w.held)}
+            labels={importerWeek.map((w) => w.w)}
+            onBarClick={(_i, label) => navigate(`/app/importer/held?week=${encodeURIComponent(label)}`)}
+          />
         </Panel>
       </div>
 
@@ -771,7 +778,15 @@ function LotDetail({ lot, now, onClose }: { lot: AppLot; now: number; onClose: (
   )
 }
 
-function LotTable({ items, now }: { items: AppLot[]; now: number }) {
+function LotTable({
+  items,
+  now,
+  initialFilters,
+}: {
+  items: AppLot[]
+  now: number
+  initialFilters?: Record<string, string>
+}) {
   if (!items.length) {
     return <EmptyState title="Пусто" text="Нет строк." to="/app/importer/create" cta="Создать аукцион" />
   }
@@ -800,6 +815,10 @@ function LotTable({ items, now }: { items: AppLot[]; now: number }) {
     { key: 'mode', label: 'Транспорт', get: (d) => d.mode },
     { key: 'container', label: 'Загрузка', get: (d) => d.container },
     { key: 'incoterm', label: 'Базис', get: (d) => d.incoterm, className: 'font-mono' },
+    { key: 'insurance', label: 'Страховка', get: (d) => (d.insurance ? 'да' : 'нет') },
+    { key: 'customs', label: 'ТО', get: (d) => (d.customs ? 'да' : 'нет') },
+    { key: 'currency', label: 'Валюта', get: (d) => d.currency },
+    { key: 'packing', label: 'Упаковка', get: (d) => d.packing || '—' },
     {
       key: 'value',
       label: 'Груз $',
@@ -807,6 +826,7 @@ function LotTable({ items, now }: { items: AppLot[]; now: number }) {
       sortType: 'number',
       cell: (d) => <span className="font-mono">{d.cargoValue ? ruInt.format(d.cargoValue) : '0'}</span>,
     },
+    { key: 'week', label: 'Неделя', get: (d) => weekLabelFromIso(d.startIso), className: 'font-mono' },
     { key: 'slot', label: 'Слот', get: (d) => slotLabel(d.startIso), cell: (d) => slotLabel(d.startIso) },
     {
       key: 'bidders',
@@ -835,6 +855,7 @@ function LotTable({ items, now }: { items: AppLot[]; now: number }) {
       facetKey="country"
       facetAllLabel="Все страны"
       searchPlaceholder="Поиск: код, маршрут, ТН ВЭД, груз…"
+      initialFilters={initialFilters}
       renderDetail={(d, close) => <LotDetail lot={d} now={now} onClose={close} />}
     />
   )
@@ -850,14 +871,25 @@ function DraftList({
   items: AppLot[]
 }) {
   const now = useNow(2000)
+  const [params] = useSearchParams()
+  const week = params.get('week')?.trim() ?? ''
+  const initialFilters = useMemo(() => (week ? { week } : undefined), [week])
   return (
     <div className="mx-auto max-w-6xl space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-1 text-[13.5px] text-muted">{hint}</p>
+        <p className="mt-1 text-[13.5px] text-muted">
+          {hint}
+          {week ? (
+            <>
+              {' '}
+              · неделя <span className="font-mono text-ink">{week}</span>
+            </>
+          ) : null}
+        </p>
       </div>
       <div className="overflow-hidden rounded-xl border border-line bg-white">
-        <LotTable items={items} now={now} />
+        <LotTable items={items} now={now} initialFilters={initialFilters} />
       </div>
     </div>
   )
@@ -900,7 +932,7 @@ export function ImporterHeld() {
   return (
     <DraftList
       title="Состоялись"
-      hint="≥ 2 исполнителя со ставками. Показаны незакрытые в архив."
+      hint="≥ 2 исполнителя со ставками. Показаны незакрытые в архив. Кнопка «Фильтр» — по всем полям."
       items={mine.filter((d) => lotStatus(d, now) === 'held' && !d.archived)}
     />
   )
@@ -990,7 +1022,7 @@ export function ImporterArchive() {
   return (
     <DraftList
       title="Архив"
-      hint="Старые закрытые слоты. Не путать с «не состоялись»."
+      hint="Старые закрытые слоты. Не путать с «не состоялись». Кнопка «Фильтр» — по всем полям."
       items={mine.filter((d) => d.archived)}
     />
   )

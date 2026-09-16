@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { howSteps } from '../components/HowItWorks'
 import { PageHero } from '../components/PageHero'
-import { PageLeadCta } from '../components/LeadMagnet'
+import { InlineTryMagnet, PageLeadCta } from '../components/LeadMagnet'
 
 const down = [
   { who: 'Первый', usd: 4680 },
@@ -64,7 +64,10 @@ export function HowPage() {
           </div>
         </div>
       </div>
-      <PageLeadCta variant="director" />
+      <div className="mx-auto max-w-6xl px-5 pb-4">
+        <InlineTryMagnet />
+      </div>
+      <PageLeadCta variant="how" />
     </main>
   )
 }
