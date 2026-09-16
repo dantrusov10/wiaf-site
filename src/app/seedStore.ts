@@ -23,7 +23,16 @@ export const seedUsers: User[] = [
     entity: 'ooo',
     balance: 0,
     subscribed: true,
+    planId: 'imp-zakupka',
     responsible: 'Трусов Д. Р.',
+    directorEmail: 'director@rlt.local',
+    directorPrefs: {
+      email: 'director@rlt.local',
+      enabled: true,
+      cadence: 'each',
+      includeMarket: true,
+      includeConditions: true,
+    },
   },
   {
     id: U_FWD,
@@ -36,6 +45,7 @@ export const seedUsers: User[] = [
     entity: 'ooo',
     balance: 18500,
     subscribed: true,
+    planId: 'fwd-stol',
     responsible: 'Трусов Д. Р.',
   },
   {
@@ -49,6 +59,7 @@ export const seedUsers: User[] = [
     entity: 'ooo',
     balance: 22000,
     subscribed: true,
+    planId: 'fwd-stol',
     responsible: 'Иванов А. А.',
   },
   {
@@ -62,6 +73,7 @@ export const seedUsers: User[] = [
     entity: 'ip',
     balance: 9000,
     subscribed: false,
+    planId: 'fwd-free',
     responsible: 'Карпов С. С.',
   },
 ]

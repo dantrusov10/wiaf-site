@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bars } from '../app/charts'
 import { bestBid, countryKey, isOpenLot, loadFromContainer, lotStatus, modeEnum, uniqueBidders } from '../app/engine'
@@ -117,7 +117,7 @@ export function AuctionsPage() {
               <li>60 минут, до 5 ставок, шаг $1.</li>
               <li>Слепые: не видно конкурентов и заказчика.</li>
               <li>Состоялись только при ≥ 2 ставках разных исполнителей.</li>
-              <li>Счёт от 1 000 ₽. Холд = 1% ставки. Комиссия 1% без потолка.</li>
+              <li>Счёт от 1 000 ₽. Холд = 1% ставки. Комиссия 1%, ≤5 000 ₽.</li>
             </ul>
             <Link to="/app/login?role=forwarder" className="mt-4 inline-flex rounded-lg bg-navy px-4 py-2 text-[13px] font-semibold text-white">
               Войти и ставить

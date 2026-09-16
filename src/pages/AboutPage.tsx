@@ -1,4 +1,4 @@
-import { PageHero } from '../components/PageHero'
+﻿import { PageHero } from '../components/PageHero'
 
 export function AboutPage() {
   return (
@@ -11,7 +11,7 @@ export function AboutPage() {
       <div className="mx-auto max-w-3xl px-5 py-14 text-[16px] leading-relaxed text-muted">
         <p>
           Импортёр (в кабинете — Заказчик) выкладывает условия бесплатно. Экспедитор (Исполнитель)
-          снижает ставку вслепую. Комиссия 1% только с победителя, без потолка 5 000 ₽.
+          снижает ставку вслепую. Комиссия 1% только с победителя, не более 5 000 ₽.
         </p>
         <dl className="mt-10 grid gap-4 border-t border-line pt-8 font-mono text-[13px] text-ink">
           <div>

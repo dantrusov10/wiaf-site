@@ -3,6 +3,7 @@ import {
   Banknote,
   BookOpen,
   Calculator,
+  CreditCard,
   FilePlus,
   Gavel,
   Inbox,
@@ -14,10 +15,12 @@ import {
   Scale,
   Trophy,
   X,
+  LineChart,
 } from 'lucide-react'
 import { useState, type ComponentType } from 'react'
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { Wordmark, Mark } from '../components/Brand'
+import { ThemeIcon } from '../components/ThemeIcon'
 import { useSession, type Role } from './session'
 
 type Item = { to: string; end?: boolean; label: string; icon: ComponentType<{ className?: string }> }
@@ -30,7 +33,9 @@ const importerGroups: Group[] = [
       { to: '/app/importer', end: true, label: 'Обзор', icon: LayoutDashboard },
       { to: '/app/importer/create', label: 'Новый лот', icon: FilePlus },
       { to: '/app/importer/tools', label: 'Инструменты', icon: Calculator },
+      { to: '/app/importer/plan', label: 'Подписка', icon: CreditCard },
       { to: '/app/importer/director', label: 'Директору', icon: Mail },
+      { to: '/rates', label: 'Курсы ЦБ', icon: LineChart },
       { to: '/help', label: 'База', icon: BookOpen },
     ],
   },
@@ -57,7 +62,9 @@ const forwarderGroups: Group[] = [
     items: [
       { to: '/app/forwarder', end: true, label: 'Обзор', icon: LayoutDashboard },
       { to: '/app/forwarder/tools', label: 'Маржа и КП', icon: Calculator },
+      { to: '/app/forwarder/plan', label: 'Подписка', icon: CreditCard },
       { to: '/app/forwarder/balance', label: 'Счёт', icon: Banknote },
+      { to: '/rates', label: 'Курсы ЦБ', icon: LineChart },
       { to: '/help', label: 'База', icon: BookOpen },
     ],
   },
@@ -95,7 +102,7 @@ function SideNav({ groups, onPick }: { groups: Group[]; onPick?: () => void }) {
                 end={item.end}
                 onClick={onPick}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] ${
+                  `nav-magnetic flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] ${
                     isActive ? 'bg-brand text-white' : 'text-muted hover:bg-fog hover:text-ink'
                   }`
                 }
@@ -130,9 +137,12 @@ export function AppShell({ role }: { role: Role }) {
         <aside className="sticky top-0 hidden h-svh w-[15.5rem] shrink-0 overflow-hidden border-r border-line bg-white lg:flex lg:flex-col">
           <div className="border-b border-line px-4 py-4">
             <Wordmark compact />
-            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-mist">
-              {isImp ? 'Кабинет заказчика' : 'Кабинет исполнителя'}
-            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <ThemeIcon id={isImp ? 'auction' : 'hold'} size={40} />
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-mist">
+                {isImp ? 'Кабинет заказчика' : 'Кабинет исполнителя'}
+              </p>
+            </div>
           </div>
           <SideNav groups={groups} />
         </aside>

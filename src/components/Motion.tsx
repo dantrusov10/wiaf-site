@@ -79,3 +79,54 @@ export function PointerStage({ children, className = '' }: { children: ReactNode
     </section>
   )
 }
+
+/** Карточка с бликом за курсором — для ЛК. */
+export function ShineCard({ children, className = '' }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const reduce = useReducedMotion()
+
+  const onMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (reduce || !ref.current) return
+    const { x, y } = localPoint(ref.current, e)
+    ref.current.style.setProperty('--sx', `${x}px`)
+    ref.current.style.setProperty('--sy', `${y}px`)
+  }
+
+  return (
+    <div
+      ref={ref}
+      onMouseMove={onMove}
+      className={`shine-card relative overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)] ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** Кнопка с лёгким press-scale. */
+export function Pressable({
+  children,
+  className = '',
+  onClick,
+  type = 'button',
+  disabled,
+}: {
+  children: ReactNode
+  className?: string
+  onClick?: () => void
+  type?: 'button' | 'submit'
+  disabled?: boolean
+}) {
+  return (
+    <Magnetic strength={0.2}>
+      <button
+        type={type}
+        disabled={disabled}
+        onClick={onClick}
+        className={`transition active:scale-[0.97] disabled:opacity-40 ${className}`}
+      >
+        {children}
+      </button>
+    </Magnetic>
+  )
+}

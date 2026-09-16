@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { PageHero } from '../components/PageHero'
 import { contests, formatContestDate } from '../content/contests'
 
@@ -11,7 +11,7 @@ export function ContestsPage() {
       <PageHero
         kicker="Конкурсы площадки"
         title="Плотность ленты, не розыгрыш фуры"
-        dek="Денежных призов нет. Зачёт идёт по состоявшимся часам и по ставкам на разные лоты. Комиссия 1% без потолка не отменяется."
+        dek="Денежных призов нет. Зачёт идёт по состоявшимся часам и по ставкам на разные лоты. Комиссия 1%, ≤5 000 ₽ не отменяется."
       />
       <div className="mx-auto max-w-6xl px-5 py-12">
         <h2 className="text-lg font-semibold">Открыты</h2>

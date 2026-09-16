@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { faqItems } from '../content/faq'
-import { prod } from '../data'
 
 export function FaqList() {
   return (
@@ -34,9 +33,9 @@ export function FaqTeaser() {
           </Link>
           <p className="mt-4 max-w-sm text-[13.5px] text-muted">
             Юридический текст — в{' '}
-            <a href={prod.rules} className="underline underline-offset-4">
-              правилах на wiaf.ru
-            </a>
+            <Link to="/rules" className="underline underline-offset-4">
+              правилах этого сайта
+            </Link>
             .
           </p>
         </div>

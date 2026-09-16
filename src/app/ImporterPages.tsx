@@ -20,8 +20,11 @@ import { EmptyState, Field, inputClass, Panel } from './ui'
 import { DataTable, type Col } from './DataTable'
 import { MessageForm } from './MessageForm'
 import { useSession } from './session'
+import { smartLotHints } from '../content/lotHints'
+import { RatesStrip } from '../components/RatesStrip'
+import { ThemeIcon } from '../components/ThemeIcon'
 
-const steps = ['Маршрут', 'Груз', 'Что в ставке', 'Слот', 'Проверка']
+const steps = ['Маршрут', 'Груз', 'Что в ставке', 'Слот и цена', 'Проверка']
 
 const emptyForm = {
   title: '',
@@ -50,6 +53,9 @@ const emptyForm = {
   comment: 'нет',
   date: '',
   time: '13:00',
+  maxBidUsd: '8000',
+  bidStepUsd: '1',
+  durationMin: '60',
 }
 
 function todayDd() {
@@ -87,14 +93,14 @@ export function ImporterHome() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      {!user?.directorEmail ? (
+      {!user?.directorEmail && !user?.directorPrefs?.email ? (
         <div className="rounded-xl border border-warn/30 bg-white px-4 py-3">
           <p className="text-[14px] font-semibold">Почта директора пустая</p>
           <p className="mt-1 text-[13px] text-muted">
-            Итоги часов не уйдут собственнику. Логист задачу обелить выбор обычно хоронит на полгода.
+            Итоги часов не уйдут собственнику. Настройте автоотчёты в кабинете директора.
           </p>
-          <Link to="/app/importer/director" className="mt-2 inline-block text-[13px] font-semibold text-brand underline">
-            Указать почту директора
+          <Link to="/app/importer/director/reports" className="mt-2 inline-block text-[13px] font-semibold text-brand underline">
+            Указать почту и автоотправку
           </Link>
         </div>
       ) : null}
@@ -109,8 +115,11 @@ export function ImporterHome() {
           <Link to="/app/importer/create" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
             Выложить слот
           </Link>
-          <Link to="/app/importer/current" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold">
-            Текущие
+          <Link to="/app/importer/plan" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold">
+            Подписка
+          </Link>
+          <Link to="/app/importer/director" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold">
+            Директору
           </Link>
           <Link to="/help" className="rounded-lg px-4 py-2.5 text-[13px] font-medium text-muted hover:text-ink">
             База
@@ -170,6 +179,7 @@ export function ImporterCreate() {
   const [form, setForm] = useState({ ...emptyForm, ready: todayDd(), date: plusDays(todayDd(), 3) })
   const [errors, setErrors] = useState<string[]>([])
   const [saved, setSaved] = useState<null | 'draft' | 'scheduled'>(null)
+  const smart = Boolean(user?.subscribed || (user?.planId && user.planId !== 'imp-free'))
 
   const set = (k: keyof typeof emptyForm, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -205,16 +215,51 @@ export function ImporterCreate() {
       comment: src.comment || 'нет',
       date: isoToDd(src.startIso),
       time: isoToHm(src.startIso),
+      maxBidUsd: String(src.maxBidUsd || 8000),
+      bidStepUsd: String(src.bidStepUsd ?? 1),
+      durationMin: String(src.durationMin ?? 60),
     })
   }, [params, lots])
 
   const included = useMemo(() => includedChecks.map((c) => c.label), [])
 
+  const hints = useMemo(
+    () =>
+      smart
+        ? smartLotHints({
+            step: step as 0 | 1 | 2 | 3 | 4,
+            country: form.country,
+            cargo: form.cargo,
+            cbm: Number(form.cbm) || 0,
+            kg: Number(form.kg) || 0,
+            mode: form.mode,
+            incoterm: form.incoterm,
+            insurance: form.insurance,
+            customs: form.customs,
+            cargoValue: Number(form.cargoValue) || 0,
+            maxBidUsd: Number(form.maxBidUsd) || 0,
+            durationMin: Number(form.durationMin) || 60,
+            bidStepUsd: Number(form.bidStepUsd) || 1,
+            hs: form.hs,
+            from: form.from,
+            to: form.to,
+            shipperAddress: form.shipperAddress,
+            ready: form.ready,
+            date: form.date,
+            places: Number(form.places) || 0,
+          })
+        : [],
+    [smart, form, step],
+  )
+
   const buildLot = (isDraft: boolean): AppLot => {
-    const slot = parseSlot(form.date, form.time) ?? {
+    const durationMin = Math.max(15, Math.min(240, Number(form.durationMin) || 60))
+    const slot = parseSlot(form.date, form.time, durationMin) ?? {
       startIso: new Date().toISOString(),
-      endIso: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      endIso: new Date(Date.now() + durationMin * 60 * 1000).toISOString(),
+      durationMin,
     }
+    const maxBid = Math.max(100, Number(form.maxBidUsd) || Number(form.cargoValue) || 8000)
     return {
       id: crypto.randomUUID(),
       ownerId: user!.id,
@@ -250,7 +295,9 @@ export function ImporterCreate() {
       endIso: slot.endIso,
       included,
       createdAt: new Date().toISOString(),
-      maxBidUsd: Math.max(500, Number(form.cargoValue) || 20000),
+      maxBidUsd: maxBid,
+      bidStepUsd: Math.max(1, Number(form.bidStepUsd) || 1),
+      durationMin: slot.durationMin ?? durationMin,
       bids: [],
     }
   }
@@ -262,14 +309,18 @@ export function ImporterCreate() {
     if (!Number(form.kg) || !Number(form.cbm)) e.push('Нужны брутто кг и объём м³')
     const ready = parseDd(form.ready)
     const slot = parseDd(form.date)
+    const durationMin = Number(form.durationMin) || 60
     if (!ready) e.push('Дата готовности — дд.мм.гггг')
-    if (!parseSlot(form.date, form.time)) e.push('Слот аукциона — дд.мм.гггг и час чч:мм')
+    if (!parseSlot(form.date, form.time, durationMin)) e.push('Слот аукциона — дд.мм.гггг и час чч:мм')
     if (ready && slot) {
       const min = new Date(ready)
       min.setDate(min.getDate() + 2)
       if (slot < min) e.push('Слот аукциона — минимум через 2 суток после готовности, лучше 3–4')
     }
     if (!form.cargoValue) e.push('Стоимость груза 0 — экспедитору нечем оценить риск. Укажите сумму.')
+    if (!Number(form.maxBidUsd) || Number(form.maxBidUsd) < 100) e.push('Укажите потолок первой ставки (USD), минимум 100')
+    if (!Number(form.bidStepUsd) || Number(form.bidStepUsd) < 1) e.push('Шаг снижения — минимум $1')
+    if (durationMin < 15 || durationMin > 240) e.push('Длительность слота — от 15 до 240 минут')
     setErrors(e)
     return e.length === 0
   }
@@ -470,17 +521,30 @@ export function ImporterCreate() {
 
         {step === 3 ? (
           <>
-            <Field label="Дата аукциона" hint="дд.мм.гггг · минимум +2 суток от готовности, лучше 3–4">
-              <input
-                className={inputClass}
-                placeholder="17.09.2026"
-                value={form.date}
-                onChange={(e) => set('date', e.target.value)}
-              />
-            </Field>
-            <Field label="Час начала (МСК)" hint="Конец = +60 минут автоматически">
-              <input className={inputClass} value={form.time} onChange={(e) => set('time', e.target.value)} />
-            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Дата аукциона" hint="дд.мм.гггг · минимум +2 суток от готовности">
+                <input
+                  className={inputClass}
+                  placeholder="17.09.2026"
+                  value={form.date}
+                  onChange={(e) => set('date', e.target.value)}
+                />
+              </Field>
+              <Field label="Час начала (МСК)">
+                <input className={inputClass} value={form.time} onChange={(e) => set('time', e.target.value)} />
+              </Field>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label="Длительность, мин" hint="15–240 · обычно 60">
+                <input className={inputClass} value={form.durationMin} onChange={(e) => set('durationMin', e.target.value)} />
+              </Field>
+              <Field label="Потолок ставки, $" hint="Максимум первой / стартовой вилки">
+                <input className={inputClass} value={form.maxBidUsd} onChange={(e) => set('maxBidUsd', e.target.value)} />
+              </Field>
+              <Field label="Шаг снижения, $" hint="Минимум 1">
+                <input className={inputClass} value={form.bidStepUsd} onChange={(e) => set('bidStepUsd', e.target.value)} />
+              </Field>
+            </div>
             <Field label="Комментарий" hint="Если нечего сказать — оставьте «нет»">
               <textarea className={`${inputClass} min-h-24`} value={form.comment} onChange={(e) => set('comment', e.target.value)} />
             </Field>
@@ -494,7 +558,8 @@ export function ImporterCreate() {
               {form.incoterm}, {form.mode}.
             </p>
             <p>
-              Слот {form.date} {form.time} МСК. Страховка {form.insurance ? 'да' : 'нет'}, ТО {form.customs ? 'да' : 'нет'}.
+              Слот {form.date} {form.time} МСК · {form.durationMin || 60} мин. Потолок ставки {form.maxBidUsd || '—'} $, шаг{' '}
+              {form.bidStepUsd || 1} $. Страховка {form.insurance ? 'да' : 'нет'}, ТО {form.customs ? 'да' : 'нет'}.
               Стоимость груза {form.cargoValue || '0'} {form.currency}.
             </p>
             {errors.length ? (
@@ -563,30 +628,61 @@ export function ImporterCreate() {
       </div>
         </div>
 
-        <aside className="h-fit rounded-xl border border-line bg-white p-4 lg:sticky lg:top-24">
-          <p className="font-mono text-[10px] uppercase tracking-wide text-mist">Предпросмотр</p>
-          <p className="mt-2 text-[15px] font-semibold">{form.title || `${form.from || '…'} → ${form.to || '…'}`}</p>
-          <ul className="mt-3 space-y-1.5 text-[12.5px] text-muted">
-            <li>
-              {form.country} · {form.incoterm} · {form.mode}
-            </li>
-            <li>
-              {form.cargo || 'груз'} · ТН ВЭД {form.hs || '—'}
-            </li>
-            <li className="font-mono">
-              {form.cbm || '0'} м³ · {form.kg || '0'} кг · {form.places || '0'} мест
-            </li>
-            <li>
-              {form.container} · страховка {form.insurance ? 'да' : 'нет'} · ТО {form.customs ? 'да' : 'нет'}
-            </li>
-            <li>
-              Слот {form.date || '—'} {form.time} · готовность {form.ready || '—'}
-            </li>
-            <li>
-              Стоимость {form.cargoValue || '0'} {form.currency}
-            </li>
-          </ul>
-          <p className="mt-4 text-[12px] text-mist">Этап {step + 1} из {steps.length}. Клик по шагам сверху — свободный переход.</p>
+        <aside className="h-fit space-y-3 lg:sticky lg:top-24">
+          <div className="rounded-xl border border-line bg-white p-4">
+            <p className="font-mono text-[10px] uppercase tracking-wide text-mist">Предпросмотр</p>
+            <p className="mt-2 text-[15px] font-semibold">{form.title || `${form.from || '…'} → ${form.to || '…'}`}</p>
+            <ul className="mt-3 space-y-1.5 text-[12.5px] text-muted">
+              <li>
+                {form.country} · {form.incoterm} · {form.mode}
+              </li>
+              <li>
+                {form.cargo || 'груз'} · ТН ВЭД {form.hs || '—'}
+              </li>
+              <li className="font-mono">
+                {form.cbm || '0'} м³ · {form.kg || '0'} кг · {form.places || '0'} мест
+              </li>
+              <li>
+                {form.container} · страховка {form.insurance ? 'да' : 'нет'} · ТО {form.customs ? 'да' : 'нет'}
+              </li>
+              <li>
+                Слот {form.date || '—'} {form.time} · {form.durationMin || 60} мин
+              </li>
+              <li>
+                Потолок {form.maxBidUsd || '—'} $ · шаг {form.bidStepUsd || 1} $
+              </li>
+              <li>
+                Груз {form.cargoValue || '0'} {form.currency}
+              </li>
+            </ul>
+            <p className="mt-4 text-[12px] text-mist">
+              Этап {step + 1} из {steps.length}. Клик по шагам сверху — свободный переход.
+            </p>
+          </div>
+
+          {smart && hints.length > 0 ? (
+            <div className="rounded-xl border border-line bg-white p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <ThemeIcon id="tips" size={40} />
+                <p className="text-[12px] font-semibold text-ink">Подсказки по этому шагу</p>
+              </div>
+              <ul className="space-y-2">
+                {hints.map((h) => (
+                  <li key={h.id} className="rounded-lg bg-fog/70 px-2.5 py-2">
+                    <p
+                      className={`text-[12px] font-semibold ${
+                        h.tone === 'warn' ? 'text-danger' : h.tone === 'ok' ? 'text-ok' : 'text-ink'
+                      }`}
+                    >
+                      {h.title}
+                    </p>
+                    <p className="mt-0.5 text-[11.5px] leading-snug text-muted">{h.text}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <RatesStrip />
         </aside>
       </div>
     </div>
@@ -1029,65 +1125,4 @@ export function ImporterLot() {
 
 export function ImporterMessage() {
   return <MessageForm who="заказчика" />
-}
-
-export function ImporterDirector() {
-  const { user, lots, setDirectorEmail } = useSession()
-  const now = useNow(2000)
-  const [email, setEmail] = useState(user?.directorEmail ?? '')
-  const mine = lots.filter((d) => d.ownerId === user?.id && !d.isDraft)
-  const held = mine.filter((d) => lotStatus(d, now) === 'held')
-  const failed = mine.filter((d) => lotStatus(d, now) === 'failed')
-
-  return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mist">Кресло директора</p>
-        <h1 className="mt-1 text-2xl font-semibold">Итоги часов</h1>
-        <p className="mt-1 text-[13.5px] text-muted">
-          Это не обязанность закупить у победителя. Ставка часа — не твёрдый оффер. Груз площадка не гарантирует.
-        </p>
-      </div>
-      <Panel title="Куда слать">
-        <form
-          className="flex flex-col gap-2 sm:flex-row"
-          onSubmit={(e) => {
-            e.preventDefault()
-            setDirectorEmail(email)
-          }}
-        >
-          <input
-            className={inputClass}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Почта директора, не логиста"
-            required
-          />
-          <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-white hover:bg-navy-2">
-            Сохранить
-          </button>
-        </form>
-        {user?.directorEmail ? (
-          <p className="mt-2 text-[13px] text-ok">Сохранено: {user.directorEmail}. Письма в этом макете не уходят на SMTP — запись в браузере.</p>
-        ) : (
-          <p className="mt-2 text-[13px] text-muted">Пока пусто — собственник слепой.</p>
-        )}
-      </Panel>
-      <div className="overflow-hidden rounded-xl border border-line bg-white">
-        <p className="border-b border-line px-4 py-3 text-[15px] font-semibold">Состоялись</p>
-        <LotTable items={held} now={now} />
-      </div>
-      <Panel title="Не состоялись">
-        <p className="text-[13.5px] text-muted">
-          Пустых слотов: {failed.length}. Это тоже факт для директора — иначе логист скажет «площадка мёртвая».
-        </p>
-        {failed.length ? (
-          <div className="mt-3 overflow-hidden rounded-lg border border-line">
-            <LotTable items={failed} now={now} />
-          </div>
-        ) : null}
-      </Panel>
-    </div>
-  )
 }

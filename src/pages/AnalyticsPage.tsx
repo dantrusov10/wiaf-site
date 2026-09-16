@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { Bars, Stat } from '../app/charts'
 import { PageHero } from '../components/PageHero'
 import { bidderMix, includedSplit, lanes, rulesOfRead, snapshot } from '../content/analytics'
@@ -18,7 +18,7 @@ export function AnalyticsPage() {
           <Stat label="Сформировано" value={String(snapshot.formed)} hint="публичная главная" />
           <Stat label="Состоялось" value={String(snapshot.held)} hint={`${snapshot.heldShare}% слотов с ≥2`} spark={weekSeries.map((w) => w.held)} />
           <Stat label="Живых на срез" value={String(snapshot.live)} hint="все Китай → Москва" />
-          <Stat label="Комиссия" value="1%" hint="без потолка 5 000 ₽" />
+          <Stat label="Комиссия" value="1%" hint="не более 5 000 ₽" />
         </div>
 
         <div className="mt-10 rounded-xl border border-line bg-white p-5">

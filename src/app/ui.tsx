@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
+import { ShineCard } from '../components/Motion'
 
 export function EmptyState({
   title,
@@ -13,7 +14,7 @@ export function EmptyState({
   cta?: string
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-line bg-white px-6 py-10 text-center">
+    <ShineCard className="rounded-xl border border-dashed border-line bg-white px-6 py-10 text-center">
       <p className="text-xl font-semibold">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-muted">{text}</p>
       {to && cta ? (
@@ -21,19 +22,19 @@ export function EmptyState({
           {cta}
         </Link>
       ) : null}
-    </div>
+    </ShineCard>
   )
 }
 
 export function Panel({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
   return (
-    <section className="rounded-xl border border-line bg-white">
+    <ShineCard className="rounded-xl border border-line bg-white">
       <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
         <h2 className="text-[15px] font-semibold">{title}</h2>
         {action}
       </header>
       <div className="p-5">{children}</div>
-    </section>
+    </ShineCard>
   )
 }
 

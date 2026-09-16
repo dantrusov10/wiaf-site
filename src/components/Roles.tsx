@@ -1,14 +1,15 @@
-import { EyeOff, FileCheck, Percent, Wallet } from 'lucide-react'
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Magnetic } from './Motion'
 import { Tag } from './Tag'
+import { ThemeIcon, type ThemeIconId } from './ThemeIcon'
 
 const importer = {
   tag: 'Заказчик',
   title: 'Выкладываете груз',
   price: '0 ₽',
   priceNote: 'без договора и комиссии площадки',
+  icon: 'auction' as ThemeIconId,
   points: [
     'Резиденты РФ: ЮЛ и ИП',
     'Форма лота фиксирует условия «за всё»',
@@ -23,11 +24,12 @@ const forwarder = {
   tag: 'Исполнитель',
   title: 'Снижаете ставку',
   price: '1% с победы',
-  priceNote: 'без потолка 5к · на счёте от 1 000 ₽',
+  priceNote: 'не более 5к · на счёте от 1 000 ₽',
+  icon: 'hold' as ThemeIconId,
   points: [
-    '5 попыток за 60 минут, шаг $1',
+    '5 попыток за слот, шаг из лота',
     'Не видит конкурентов и заказчика',
-    'Холд = 1% от своей ставки',
+    'Холд = 1% от своей ставки (≤5 000 ₽)',
     'Акты по ЭДО, комиссия в рублях',
   ],
   cta: 'Я перевозчик',
@@ -39,6 +41,7 @@ const director = {
   title: 'Читаете итог часа',
   price: 'письмо',
   priceNote: 'не обязанность закупить у победителя',
+  icon: 'director' as ThemeIconId,
   points: [
     'Почта отдельно от логина логиста',
     'После каждого часа: вилка и число ставок',
@@ -83,10 +86,10 @@ export function Roles() {
         </div>
 
         <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <TrustChip icon={EyeOff} title="Слепые торги" text="Нет окна сговора в чате" />
-          <TrustChip icon={Percent} title="Комиссия 1%" text="Без потолка 5 000 ₽" />
-          <TrustChip icon={Wallet} title="Импортёру ноль" text="Сервис без оплаты" />
-          <TrustChip icon={FileCheck} title="Счёт исполнителя" text="От 1 000 ₽ + холд под лот" />
+          <TrustChip id="auction" title="Слепые торги" text="Нет окна сговора в чате" />
+          <TrustChip id="commission" title="Комиссия 1%" text="не более 5 000 ₽" />
+          <TrustChip id="balance" title="Импортёру ноль" text="Сервис без оплаты" />
+          <TrustChip id="hold" title="Счёт исполнителя" text="От 1 000 ₽ + холд под лот" />
         </ul>
       </div>
     </section>
@@ -96,7 +99,10 @@ export function Roles() {
 function RoleCard({ data, accent }: { data: typeof importer; accent?: boolean }) {
   return (
     <article className={`lift-card flex flex-col rounded-lg border p-5 ${accent ? 'border-brand/30 bg-paper' : 'border-line bg-paper'}`}>
-      <Tag tone={accent ? 'brand' : 'ink'}>{data.tag}</Tag>
+      <div className="flex items-start justify-between gap-3">
+        <Tag tone={accent ? 'brand' : 'ink'}>{data.tag}</Tag>
+        <ThemeIcon id={data.icon} size={72} />
+      </div>
       <h3 className="mt-3 text-lg font-semibold">{data.title}</h3>
       <p className="mt-2 text-[18px] font-semibold text-brand">{data.price}</p>
       <p className="text-[13px] text-muted">{data.priceNote}</p>
@@ -120,18 +126,10 @@ function RoleCard({ data, accent }: { data: typeof importer; accent?: boolean })
   )
 }
 
-function TrustChip({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: typeof EyeOff
-  title: string
-  text: string
-}) {
+function TrustChip({ id, title, text }: { id: ThemeIconId; title: string; text: string }) {
   return (
     <li className="lift-card flex gap-3 rounded-lg border border-line bg-white px-4 py-3">
-      <Icon className="mt-0.5 size-4 shrink-0 text-brand" />
+      <ThemeIcon id={id} size={56} className="shrink-0" />
       <div>
         <p className="text-[13.5px] font-semibold">{title}</p>
         <p className="text-[12.5px] text-muted">{text}</p>

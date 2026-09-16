@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+﻿import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { isOpenLot, lotStatus } from '../app/engine'
 import { useSession } from '../app/session'
@@ -26,7 +26,8 @@ export function Hero() {
             Выкладываете груз — перевозчики час снижают ставку
           </h1>
           <p className="mt-3 max-w-md text-[15px] leading-relaxed text-muted">
-            Импортёру бесплатно. Комиссия только с победителя: 1%, без потолка 5 000 ₽. Состоялось, если пришли двое.
+            Импортёру бесплатно. Регистрация ЮЛ и ИП — 0 ₽. Комиссия только с победителя: 1%, не более 5 000 ₽.
+            Состоялось, если пришли двое.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Magnetic>

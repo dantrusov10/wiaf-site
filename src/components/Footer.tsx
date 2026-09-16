@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom'
-import { prod } from '../data'
 import { phoneDisplay, phoneHref } from '../nav'
 import { Wordmark } from './Brand'
 
 const links = [
   { to: '/auctions', label: 'Аукционы' },
-  { to: '/help', label: 'База' },
-  { to: '/guide', label: 'Гид' },
+  { to: '/articles', label: 'Блог' },
+  { to: '/rates', label: 'Курсы ЦБ' },
   { to: '/director', label: 'Директору' },
+  { to: '/pricing', label: 'Тарифы' },
   { to: '/rules', label: 'Правила' },
   { to: '/privacy', label: 'Конфиденциальность' },
 ]
@@ -23,9 +23,6 @@ export function Footer() {
               {item.label}
             </Link>
           ))}
-          <a href={prod.rules} className="hover:text-white">
-            Правила на wiaf.ru
-          </a>
         </nav>
         <div className="flex flex-wrap items-center gap-4 font-mono text-[12px] text-mist">
           <a href={phoneHref} className="hover:text-white">

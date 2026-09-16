@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { howSteps } from '../components/HowItWorks'
 import { PageHero } from '../components/PageHero'
-import { prod } from '../data'
 
 const down = [
   { who: 'Первый', usd: 4680 },
@@ -48,15 +47,15 @@ export function HowPage() {
         </div>
         <div className="mt-10 rounded-2xl border border-line bg-white p-6 text-[14.5px] leading-relaxed text-muted">
           <p>
-            Полный юридический текст —{' '}
-            <a href={prod.rules} className="font-semibold text-ink underline underline-offset-4">
-              правила на wiaf.ru
-            </a>
-            . Кратко: резиденты РФ, слепые торги, шаг $1, комиссия только с победителя.
+            Полный текст для этой тестовой площадки —{' '}
+            <Link to="/rules" className="font-semibold text-ink underline underline-offset-4">
+              правила на этом сайте
+            </Link>
+            . Кратко: резиденты РФ, слепые торги, шаг и срок задаются в лоте, комиссия только с победителя (1%, ≤5 000 ₽).
           </p>
           <div className="mt-4 flex flex-wrap gap-4">
-            <Link to="/rules" className="font-semibold text-ink underline underline-offset-4">
-              Сводка правил
+            <Link to="/faq" className="font-semibold text-ink underline underline-offset-4">
+              FAQ
             </Link>
             <Link to="/analytics" className="font-semibold text-ink underline underline-offset-4">
               Как читать цифры

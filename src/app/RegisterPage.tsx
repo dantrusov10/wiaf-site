@@ -93,7 +93,10 @@ export function RegisterPage() {
           <Wordmark />
           <h1 className="text-2xl font-semibold">Регистрация · {role === 'importer' ? 'заказчик' : 'исполнитель'}</h1>
           <p className="text-[13.5px] text-muted">
-            ЮЛ или ИП, резидент РФ. ИНН проверяем через Checko (актуальность ЕГРЮЛ). Тестовые учётки localhost не удаляем.
+            Бесплатно для ЮЛ и ИП (резидент РФ). ИНН проверяем через Checko. Аукцион на Free не запирается подпиской.
+            {role === 'forwarder'
+              ? ' Комиссия с победы — 1%, не более 5 000 ₽; активация счёта от 1 000 ₽.'
+              : ' Импортёру выкладка слотов — 0 ₽.'}
           </p>
           <Field label="Форма">
             <select className={inputClass} value={form.entity} onChange={(e) => set('entity', e.target.value)}>

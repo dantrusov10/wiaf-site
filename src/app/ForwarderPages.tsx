@@ -6,6 +6,7 @@ import { formatWhen, loadLabel, modeLabel, ruDec, ruInt } from '../data'
 import { useNow } from '../hooks'
 import { BidBox } from './BidBox'
 import { Bars, Stat } from './charts'
+import { RatesStrip } from '../components/RatesStrip'
 import {
   bestBid,
   commissionRub,
@@ -171,12 +172,15 @@ export function ForwarderHome() {
           <Link to="/app/forwarder/balance" className="rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
             Пополнить
           </Link>
-          <Link to="/app/forwarder/china" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold">
-            Лента Китая · {byCountry.china}
+          <Link to="/app/forwarder/plan" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold">
+            Подписка
           </Link>
-          <Link to="/help/hold-1" className="rounded-lg px-4 py-2.5 text-[13px] font-medium text-muted hover:text-ink">
-            Почему серая ставка
+          <Link to="/rates" className="rounded-lg border border-line px-4 py-2.5 text-[13px] font-semibold">
+            Курсы ЦБ
           </Link>
+        </div>
+        <div className="mt-4">
+          <RatesStrip />
         </div>
       </div>
 
@@ -213,7 +217,11 @@ export function ForwarderHome() {
           }
         >
           <p className="text-[13.5px] text-muted">
-            Подписка: <span className="font-semibold text-ink">{subscribed ? 'включена' : 'выключена'}</span>. Не мониторить пустую ленту руками.
+            Алерт ленты: <span className="font-semibold text-ink">{subscribed ? 'вкл' : 'выкл'}</span>. Тарифы инструментов — в{' '}
+            <Link to="/app/forwarder/plan" className="font-semibold text-brand underline">
+              Подписке
+            </Link>
+            .
           </p>
           <ul className="mt-3 space-y-1.5 text-[13px]">
             <li className="flex justify-between">
@@ -236,7 +244,7 @@ export function ForwarderHome() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Выиграно / сыграно" value={`${won.length} / ${played}`} hint={`win rate ${winRate}%`} spark={forwarderWeek.map((w) => w.won)} />
-        <Stat label="Комиссия" value={`${ruInt.format(commission)} ₽`} hint="1% без потолка" />
+        <Stat label="Комиссия" value={`${ruInt.format(commission)} ₽`} hint="1%, ≤5 000 ₽" />
         <Stat label="Оборот побед" value={`$${ruInt.format(turnover)}`} hint="сумма выигравших ставок" />
         <Stat label="Ваших ставок" value={String(myBids)} hint="по всем лотам" />
       </div>
@@ -483,8 +491,8 @@ export function ForwarderBalance() {
       </div>
       <Panel title="Пополнить">
         <p className="mb-3 text-[13px] text-muted">
-          Минимум 1 000 ₽ за раз. Чтобы ставить на лот, на счёте должно хватать на 1% от вашей ставки (без
-          потолка 5к). Деньги никуда не уходят — только этот браузер.
+          Минимум 1 000 ₽ за раз. Чтобы ставить на лот, на счёте должно хватать на 1% от вашей ставки, но не больше
+          потолка комиссии 5 000 ₽. Деньги никуда не уходят — только этот браузер.
         </p>
         <div className="flex flex-wrap gap-2">
           {amounts.map((n) => (

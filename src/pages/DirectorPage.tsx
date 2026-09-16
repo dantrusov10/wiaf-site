@@ -7,31 +7,40 @@ export function DirectorPage() {
     <main>
       <PageHero
         kicker="Директору"
-        title="Факт цены часа — на почту, не в кабинет логиста"
-        dek="Площадка не может обязать закупить у победителя. Ставка часа — не твёрдый оффер. Груз в карточке площадка не гарантирует. Ценность для собственника — письмо после торга, пока логист снова не закрыл тему на полгода."
+        title="Сводка часов, сравнение с рынком и автоотчёты"
+        dek="В кабинете заказчика — интерфейс директора: аналитика, условия лотов, сравнение с типичными ставками, статьи и курсы ЦБ. Регистрация бесплатная. Комиссия с победителя 1%, не более 5 000 ₽."
       />
       <div className="mx-auto max-w-6xl px-5 py-12">
         <div className="grid gap-6 lg:grid-cols-2">
           <article className="rounded-xl border border-line bg-white p-6">
-            <h2 className="text-lg font-semibold">Что придёт</h2>
+            <h2 className="text-lg font-semibold">Что в кабинете и в письме</h2>
             <ul className="mt-4 space-y-2 text-[14px] leading-relaxed text-muted">
-              <li>Плечо, объём, состоялся или нет, сколько ставили, минимум и вилка.</li>
-              <li>Прямым текстом: это не обязанность отдать груз победителю.</li>
-              <li>Если слот пустой — тоже напишем. Иначе логист скажет «площадка мёртвая».</li>
+              <li>Сыгранные конкурсы: плечо, объём, игроки, победа.</li>
+              <li>Условия лота (Incoterm, страховка, что входит в ставку).</li>
+              <li>Сравнение с полосой «как обычно играют» похожие аукционы.</li>
+              <li>Автоотправка на почту директора после каждого состоявшегося часа — или сводка вручную.</li>
             </ul>
             <div className="mt-6">
               <DirectorLeadForm />
             </div>
           </article>
           <article className="rounded-xl border border-line bg-white p-6">
-            <h2 className="text-lg font-semibold">Кто не директор</h2>
+            <h2 className="text-lg font-semibold">Где открыть</h2>
             <p className="mt-3 text-[14px] leading-relaxed text-muted">
-              Первый, кто ввёл ИНН, в кабинете — логист. Кресло директора не ставится галочкой. ФИО должно совпасть с
-              ЕГРЮЛ; почта не равна логину логиста. УКЭП — позже. Пока бейдж «по ЕГРЮЛ», не «гарантирован паспорт».
+              Войдите как заказчик → раздел «Директору»: сводка, отчёты, статьи, курсы ЦБ. Подписка на инструменты — отдельный
+              пункт «Подписка» в ЛК (не только на сайте).
             </p>
-            <Link to="/app/login?role=importer" className="mt-5 inline-flex rounded-lg border border-line px-4 py-2.5 text-[13px] font-medium">
-              Войти как заказчик
-            </Link>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/app/login?role=importer" className="inline-flex rounded-lg bg-brand px-4 py-2.5 text-[13px] font-semibold text-white">
+                Войти как заказчик
+              </Link>
+              <Link to="/articles" className="inline-flex rounded-lg border border-line px-4 py-2.5 text-[13px] font-medium">
+                Статьи
+              </Link>
+              <Link to="/rates" className="inline-flex rounded-lg border border-line px-4 py-2.5 text-[13px] font-medium">
+                Курсы ЦБ
+              </Link>
+            </div>
           </article>
         </div>
       </div>

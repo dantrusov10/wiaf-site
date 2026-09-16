@@ -44,7 +44,40 @@ export type AppLot = {
   included: string[]
   createdAt: string
   maxBidUsd: number
+  /** Шаг снижения ставки, USD. По умолчанию 1. */
+  bidStepUsd?: number
+  /** Длительность слота, минут. По умолчанию 60. */
+  durationMin?: number
   bids: Bid[]
+}
+
+export type PlanId =
+  | 'imp-free'
+  | 'imp-zakupka'
+  | 'imp-pro'
+  | 'fwd-free'
+  | 'fwd-stol'
+  | 'fwd-pro'
+
+export type DirectorReportCadence = 'each' | 'weekly' | 'manual'
+
+export type DirectorPrefs = {
+  email: string
+  enabled: boolean
+  cadence: DirectorReportCadence
+  includeMarket: boolean
+  includeConditions: boolean
+}
+
+export type DirectorReport = {
+  id: string
+  ownerId: string
+  to: string
+  subject: string
+  body: string
+  at: string
+  lotIds: string[]
+  channel: 'mailto' | 'inbox'
 }
 
 export type User = {
@@ -58,9 +91,12 @@ export type User = {
   entity: 'ooo' | 'ip'
   balance: number
   subscribed: boolean
+  /** Тариф инструментов (аукцион всегда на Free). */
+  planId: PlanId
   responsible: string
   /** Почта директора / собственника — отдельно от логина логиста. */
   directorEmail?: string
+  directorPrefs?: DirectorPrefs
   /** Снимок Checko на момент регистрации (если был). */
   checko?: {
     light: string
@@ -97,6 +133,9 @@ export const RUB_PER_USD = 80
 /** Минимум на счёте исполнителя после регистрации / для «живого» кабинета */
 export const REG_BALANCE_MIN = 1000
 
+/** Потолок комиссии с победителя, ₽ */
+export const COMMISSION_CAP_RUB = 5000
+
 /** Минимум одного пополнения на localhost */
 export const TOPUP_MIN = 1000
 
@@ -122,9 +161,10 @@ export function winnerId(bids: Bid[]) {
   return hit?.userId
 }
 
-/** 1% от ставки в USD → ₽. Без потолка 5 000 ₽. */
+/** 1% от ставки в USD → ₽, потолок 5 000 ₽. */
 export function commissionRub(winUsd: number) {
-  return Math.max(0, Math.round(winUsd * 0.01 * RUB_PER_USD))
+  const raw = Math.max(0, Math.round(winUsd * 0.01 * RUB_PER_USD))
+  return Math.min(COMMISSION_CAP_RUB, raw)
 }
 
 /** Сколько должно лежать на счёте, чтобы поставить эту ставку (холд под комиссию). */
@@ -176,16 +216,17 @@ export function slotLabel(iso: string) {
   return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function parseSlot(date: string, time: string) {
+export function parseSlot(date: string, time: string, durationMin = 60) {
   const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(date.trim())
   const t = /^(\d{1,2}):(\d{2})$/.exec(time.trim())
   if (!m || !t) return null
   const startIso = `${m[3]}-${m[2]}-${m[1]}T${t[1].padStart(2, '0')}:${t[2]}:00+03:00`
   const end = new Date(startIso)
-  end.setHours(end.getHours() + 1)
+  const mins = Math.max(15, Math.min(240, durationMin || 60))
+  end.setMinutes(end.getMinutes() + mins)
   const pad = (n: number) => String(n).padStart(2, '0')
   const endIso = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}:00+03:00`
-  return { startIso, endIso }
+  return { startIso, endIso, durationMin: mins }
 }
 
 export function parseDdTime(s: string) {

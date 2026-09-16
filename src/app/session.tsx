@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { buildDirectorReportBody } from './directorReport'
 import {
   bestBid,
   commissionRub,
@@ -9,7 +10,10 @@ import {
   TOPUP_MIN,
   winnerId,
   type AppLot,
+  type DirectorPrefs,
+  type DirectorReport,
   type Ledger,
+  type PlanId,
   type Role,
   type Ticket,
   type User,
@@ -25,9 +29,32 @@ type Store = {
   lots: AppLot[]
   tickets: Ticket[]
   ledger: Ledger[]
+  directorReports: DirectorReport[]
 }
 
-const KEY = 'wiaf-local-v8'
+const KEY = 'wiaf-local-v9'
+
+function defaultPlan(role: Role, subscribed: boolean): PlanId {
+  if (role === 'importer') return subscribed ? 'imp-zakupka' : 'imp-free'
+  return subscribed ? 'fwd-stol' : 'fwd-free'
+}
+
+function migrateUser(u: User): User {
+  const planId = u.planId ?? defaultPlan(u.role, u.subscribed)
+  const subscribed = planId !== 'imp-free' && planId !== 'fwd-free'
+  return {
+    ...u,
+    planId,
+    subscribed,
+    directorPrefs: u.directorPrefs ?? {
+      email: u.directorEmail ?? '',
+      enabled: false,
+      cadence: 'manual',
+      includeMarket: true,
+      includeConditions: true,
+    },
+  }
+}
 
 const empty: Store = {
   sessionUserId: null,
@@ -35,19 +62,21 @@ const empty: Store = {
   lots: seedLots(),
   tickets: seedTickets,
   ledger: seedLedger,
+  directorReports: [],
 }
 
 function read(): Store {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(KEY) ?? localStorage.getItem('wiaf-local-v8')
     if (!raw) return structuredClone(empty)
-    const parsed = JSON.parse(raw) as Store
+    const parsed = JSON.parse(raw) as Partial<Store>
     return {
       sessionUserId: parsed.sessionUserId ?? null,
-      users: parsed.users?.length ? parsed.users : seedUsers,
+      users: (parsed.users?.length ? parsed.users : seedUsers).map(migrateUser),
       lots: parsed.lots?.length ? parsed.lots : seedLots(),
       tickets: parsed.tickets ?? [],
       ledger: parsed.ledger ?? [],
+      directorReports: parsed.directorReports ?? [],
     }
   } catch {
     return structuredClone(empty)
@@ -58,10 +87,49 @@ function write(store: Store) {
   localStorage.setItem(KEY, JSON.stringify(store))
 }
 
+function pushDirectorMail(
+  s: Store,
+  owner: User,
+  lotIds: string[],
+  openMail: boolean,
+): { store: Store; message: string } {
+  const prefs = owner.directorPrefs
+  const to = (prefs?.email || owner.directorEmail || '').trim().toLowerCase()
+  if (!to) return { store: s, message: 'Укажите e-mail директора' }
+  const lots = s.lots.filter((l) => lotIds.includes(l.id))
+  if (!lots.length) return { store: s, message: 'Нет лотов для отчёта' }
+  const subject = `wIaF · отчёт по ${lots.length} час(ам) · ${owner.company}`
+  const body = buildDirectorReportBody(lots, {
+    company: owner.company,
+    includeMarket: prefs?.includeMarket ?? true,
+    includeConditions: prefs?.includeConditions ?? true,
+  })
+  const report: DirectorReport = {
+    id: crypto.randomUUID(),
+    ownerId: owner.id,
+    to,
+    subject,
+    body,
+    at: new Date().toISOString(),
+    lotIds,
+    channel: openMail ? 'mailto' : 'inbox',
+  }
+  if (openMail && typeof window !== 'undefined') {
+    window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
+  return {
+    store: { ...s, directorReports: [report, ...s.directorReports] },
+    message: openMail ? `Отчёт открыт в почте → ${to}` : `Отчёт сохранён → ${to}`,
+  }
+}
+
 function settle(s: Store): Store {
   const users = s.users.map((u) => ({ ...u }))
   const lots = s.lots.map((l) => ({ ...l, bids: [...l.bids] }))
   const ledger = [...s.ledger]
+  let directorReports = [...s.directorReports]
+  const autoLotByOwner = new Map<string, string[]>()
+
   for (const lot of lots) {
     if (lot.settled) continue
     if (lotStatus(lot) !== 'held') continue
@@ -77,12 +145,27 @@ function settle(s: Store): Store {
         userId: u.id,
         amount: -fee,
         at: new Date().toISOString(),
-        note: `Комиссия 1% по ${lot.code}`,
+        note: `Комиссия 1% (≤5 000 ₽) по ${lot.code}`,
       })
     }
     lot.settled = true
+    const owner = users.find((x) => x.id === lot.ownerId)
+    if (owner?.directorPrefs?.enabled && owner.directorPrefs.cadence === 'each') {
+      const list = autoLotByOwner.get(owner.id) ?? []
+      list.push(lot.id)
+      autoLotByOwner.set(owner.id, list)
+    }
   }
-  return { ...s, users, lots, ledger }
+
+  let next: Store = { ...s, users, lots, ledger, directorReports }
+  for (const [ownerId, lotIds] of autoLotByOwner) {
+    const owner = users.find((x) => x.id === ownerId)
+    if (!owner) continue
+    const r = pushDirectorMail(next, owner, lotIds, false)
+    next = r.store
+    directorReports = next.directorReports
+  }
+  return next
 }
 
 type RegisterInput = {
@@ -111,7 +194,10 @@ type Ctx = Store & {
   addBid: (lotId: string, amount: number) => string | null
   topup: (amount: number) => string | null
   setSubscribed: (v: boolean) => void
+  setPlan: (planId: PlanId) => void
   setDirectorEmail: (email: string) => void
+  setDirectorPrefs: (prefs: DirectorPrefs) => void
+  sendDirectorReport: (lotIds: string[], opts?: { openMail?: boolean }) => string
   addTicket: (t: Omit<Ticket, 'id' | 'at'>) => void
   resetDemo: () => void
 }
@@ -150,11 +236,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           return 'Этот ИНН уже зарегистрирован в этой роли'
         }
         const id = crypto.randomUUID()
+        const planId = defaultPlan(input.role, false)
         patch((s) => ({
           ...s,
           sessionUserId: id,
           users: [
-            {
+            migrateUser({
               id,
               inn,
               password: input.password,
@@ -163,12 +250,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
               phone: input.phone,
               role: input.role,
               entity: input.entity,
-              balance: input.role === 'forwarder' ? 0 : 0,
+              balance: 0,
               subscribed: false,
+              planId,
               responsible: input.responsible,
               directorEmail: undefined,
               checko: input.checko,
-            },
+            }),
             ...s.users,
           ],
         }))
@@ -193,7 +281,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             if (l.id !== id) return l
             const start = new Date()
             const end = new Date(start.getTime() + 60 * 60 * 1000)
-            return { ...l, isDraft: false, archived: false, closedAt: undefined, startIso: start.toISOString(), endIso: end.toISOString() }
+            return {
+              ...l,
+              isDraft: false,
+              archived: false,
+              closedAt: undefined,
+              startIso: start.toISOString(),
+              endIso: end.toISOString(),
+            }
           }),
         })),
       finishNow: (id) =>
@@ -213,7 +308,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           ...s,
           lots: s.lots.map((l) =>
             l.id === id
-              ? { ...l, isDraft: false, archived: false, settled: false, closedAt: undefined, startIso: slot.startIso, endIso: slot.endIso, bids: [] }
+              ? {
+                  ...l,
+                  isDraft: false,
+                  archived: false,
+                  settled: false,
+                  closedAt: undefined,
+                  startIso: slot.startIso,
+                  endIso: slot.endIso,
+                  bids: [],
+                }
               : l,
           ),
         }))
@@ -226,7 +330,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         }
         const need = holdForBidRub(amount)
         if (user.balance < need) {
-          return `На счёте нужно ≥ ${need.toLocaleString('ru-RU')} ₽ (1% от этой ставки). Сейчас ${user.balance.toLocaleString('ru-RU')} ₽`
+          return `На счёте нужно ≥ ${need.toLocaleString('ru-RU')} ₽ (холд 1%, ≤5 000). Сейчас ${user.balance.toLocaleString('ru-RU')} ₽`
         }
         const lot = store.lots.find((l) => l.id === lotId)
         if (!lot || lot.isDraft || lot.archived) return 'Лот недоступен'
@@ -239,6 +343,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (last !== undefined && amount >= last) return 'Новая ставка должна быть ниже предыдущей (шаг $1)'
         if (amount > lot.maxBidUsd) return `Не выше максимума ${lot.maxBidUsd} $`
         if (amount <= 0) return 'Укажите ставку в USD'
+        const step = lot.bidStepUsd && lot.bidStepUsd > 0 ? lot.bidStepUsd : 1
+        if (last !== undefined && last - amount < step) {
+          return `Шаг снижения минимум ${step} $`
+        }
         patch((s) => ({
           ...s,
           lots: s.lots.map((l) =>
@@ -256,7 +364,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           ...s,
           users: s.users.map((u) => (u.id === user.id ? { ...u, balance: u.balance + amount } : u)),
           ledger: [
-            { id: crypto.randomUUID(), userId: user.id, amount, at: new Date().toISOString(), note: `Счёт №${Math.floor(10000 + Math.random() * 89999)}` },
+            {
+              id: crypto.randomUUID(),
+              userId: user.id,
+              amount,
+              at: new Date().toISOString(),
+              note: `Счёт №${Math.floor(10000 + Math.random() * 89999)}`,
+            },
             ...s.ledger,
           ],
         }))
@@ -264,17 +378,62 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       setSubscribed: (v) => {
         if (!user) return
+        const planId = defaultPlan(user.role, v)
         patch((s) => ({
           ...s,
-          users: s.users.map((u) => (u.id === user.id ? { ...u, subscribed: v } : u)),
+          users: s.users.map((u) => (u.id === user.id ? { ...u, subscribed: v, planId } : u)),
+        }))
+      },
+      setPlan: (planId) => {
+        if (!user) return
+        const subscribed = planId !== 'imp-free' && planId !== 'fwd-free'
+        patch((s) => ({
+          ...s,
+          users: s.users.map((u) => (u.id === user.id ? { ...u, planId, subscribed } : u)),
         }))
       },
       setDirectorEmail: (email) => {
         if (!user) return
+        const e = email.trim().toLowerCase() || undefined
         patch((s) => ({
           ...s,
-          users: s.users.map((u) => (u.id === user.id ? { ...u, directorEmail: email.trim().toLowerCase() || undefined } : u)),
+          users: s.users.map((u) =>
+            u.id === user.id
+              ? {
+                  ...u,
+                  directorEmail: e,
+                  directorPrefs: { ...(u.directorPrefs ?? migrateUser(u).directorPrefs!), email: e ?? '' },
+                }
+              : u,
+          ),
         }))
+      },
+      setDirectorPrefs: (prefs) => {
+        if (!user) return
+        patch((s) => ({
+          ...s,
+          users: s.users.map((u) =>
+            u.id === user.id
+              ? {
+                  ...u,
+                  directorEmail: prefs.email || u.directorEmail,
+                  directorPrefs: prefs,
+                }
+              : u,
+          ),
+        }))
+      },
+      sendDirectorReport: (lotIds, opts) => {
+        if (!user) return 'Нужен вход'
+        let message = 'Ошибка'
+        patch((s) => {
+          const owner = s.users.find((u) => u.id === user.id)
+          if (!owner) return s
+          const r = pushDirectorMail(s, owner, lotIds, opts?.openMail ?? true)
+          message = r.message
+          return r.store
+        })
+        return message
       },
       addTicket: (t) =>
         patch((s) => ({

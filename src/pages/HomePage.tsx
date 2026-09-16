@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { Bars, Stat } from '../app/charts'
 import { bestBid, isOpenLot, lotStatus, uniqueBidders } from '../app/engine'
 import { useSession } from '../app/session'
@@ -7,7 +7,10 @@ import { Hero } from '../components/Hero'
 import { HowItWorks } from '../components/HowItWorks'
 import { HomeLeadStrip } from '../components/LeadMagnet'
 import { NewsCard } from '../components/NewsCard'
+import { RatesStrip } from '../components/RatesStrip'
 import { Roles } from '../components/Roles'
+import { ThemeIcon, ThemeTileRow } from '../components/ThemeIcon'
+import { articles } from '../content/articles'
 import { digests } from '../content/news'
 import { weekSeries } from '../demo/seed'
 import { ruInt } from '../data'
@@ -27,13 +30,25 @@ export function HomePage() {
       <Hero />
 
       <section className="border-b border-line bg-white">
-        <div className="mx-auto max-w-6xl px-5 py-10">
+        <div className="mx-auto max-w-6xl space-y-4 px-5 py-10">
+          <RatesStrip />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Сформировано" value={String(formed)} hint="не шаблоны" spark={weekSeries.map((w) => w.formed)} />
             <Stat label="Состоялось" value={String(held.length)} hint={`${heldRate}% слотов с ≥2 игроками`} spark={weekSeries.map((w) => w.held)} />
             <Stat label="Сейчас в ленте" value={String(live.length)} hint="очередь + идёт" />
-            <Stat label="Комиссия с победы" value="1%" hint="без потолка 5к" />
+            <Stat label="Комиссия с победы" value="1%" hint="не более 5к" />
           </div>
+          <ThemeTileRow
+            className="pt-2"
+            items={[
+              { id: 'auction', label: 'Аукционы', to: '/auctions' },
+              { id: 'plan', label: 'Тарифы', to: '/pricing' },
+              { id: 'director', label: 'Директору', to: '/director' },
+              { id: 'rules', label: 'Правила', to: '/rules' },
+              { id: 'rates', label: 'Курсы ЦБ', to: '/rates' },
+              { id: 'tips', label: 'Блог', to: '/articles' },
+            ]}
+          />
         </div>
       </section>
 
@@ -96,14 +111,33 @@ export function HomePage() {
         <div className="mx-auto max-w-6xl px-5 py-12">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold">Статьи</h2>
+              <h2 className="text-xl font-semibold">Блог</h2>
+              <p className="mt-1 text-[13px] text-muted">Как на itman.ru/blog — карточки, рубрики, featured.</p>
             </div>
-            <Link to="/news" className="text-[13px] font-medium underline">
+            <Link to="/articles" className="text-[13px] font-medium underline">
               Все материалы
             </Link>
           </div>
-          <div className="mt-6">
-            {digests.slice(0, 3).map((item) => (
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {articles.slice(0, 3).map((a) => (
+              <Link
+                key={a.slug}
+                to={`/articles/${a.slug}`}
+                className="overflow-hidden rounded-2xl border border-line bg-paper transition hover:border-brand/40"
+              >
+                <div className="flex items-center justify-center bg-[#f4f5f7] py-6">
+                  <ThemeIcon id={a.icon} size={80} />
+                </div>
+                <div className="p-4">
+                  <p className="font-mono text-[10px] text-mist">{a.category}</p>
+                  <p className="mt-1 text-[14px] font-semibold leading-snug">{a.title}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-8">
+            <p className="mb-3 text-[13px] font-semibold text-muted">Дайджесты с источниками</p>
+            {digests.slice(0, 2).map((item) => (
               <NewsCard key={item.slug} item={item} />
             ))}
           </div>
